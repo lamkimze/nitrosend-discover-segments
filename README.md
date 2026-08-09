@@ -75,7 +75,9 @@ Seeds load automatically when the contact table is empty.
 
 ## Collaborators
 
-Please grant access to:
+Invited with write access:
 
 - [@cosmoblk](https://github.com/cosmoblk)
 - [@auscaster](https://github.com/auscaster)
+
+Repo: https://github.com/lamkimze/nitrosend-discover-segments
