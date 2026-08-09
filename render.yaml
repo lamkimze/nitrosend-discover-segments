@@ -1,0 +1,12 @@
+# Example Render Blueprint — connect the GitHub repo in the Render dashboard.
+services:
+  - type: web
+    name: nitrosend-discover-segments
+    runtime: docker
+    plan: free
+    healthCheckPath: /up
+    envVars:
+      - key: RAILS_MASTER_KEY
+        sync: false
+      - key: RAILS_ENV
+        value: production

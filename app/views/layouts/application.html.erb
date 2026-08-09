@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= content_for(:title) || "Discover Segments · Nitrosend" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Nitrosend">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= yield :head %>
+
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,450;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <body>
+    <div class="app-shell">
+      <header class="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-[var(--color-line)] pb-5">
+        <div>
+          <p class="brand-mark">Nitrosend · prototype</p>
+          <p class="mt-2 font-display text-xl text-[var(--color-ink)] sm:text-2xl">Horizon Travel</p>
+        </div>
+        <nav class="flex items-center gap-1 text-sm text-[var(--color-ink-muted)]">
+          <%= link_to "Audiences", root_path, class: "btn-quiet" %>
+          <%= button_to "Reset demo", demo_reset_path, method: :post, class: "btn-quiet", form: { data: { turbo_confirm: "Clear proposed and accepted segments? Contacts stay." } } %>
+        </nav>
+      </header>
+
+      <% if flash.any? %>
+        <div class="flash-region" role="status">
+          <% flash.each do |type, message| %>
+            <div class="<%= flash_class(type) %>"><%= message %></div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <main>
+        <%= yield %>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Recreate a public staging tunnel to the local Rails server on :3000
+set -euo pipefail
+echo "Ensure Rails is running on http://127.0.0.1:3000"
+exec ssh -o StrictHostKeyChecking=accept-new -R 80:127.0.0.1:3000 nokey@localhost.run

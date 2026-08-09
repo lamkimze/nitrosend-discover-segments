@@ -1,0 +1,71 @@
+<% content_for :title, "Audiences · Horizon Travel" %>
+
+<section class="mb-12 max-w-2xl">
+  <p class="brand-mark">Audiences</p>
+  <h1 class="font-display mt-3 text-3xl leading-tight tracking-tight text-[var(--color-ink)] sm:text-4xl">
+    Discover segments from how people actually travel
+  </h1>
+  <p class="meta mt-4 text-base leading-relaxed">
+    <%= @contact_count %> contacts in Horizon Travel. Instead of writing filter rules from scratch,
+    ask Nitrosend to propose audiences from destinations, trip style, and engagement — then keep what fits.
+  </p>
+
+  <div class="mt-8 flex flex-wrap items-center gap-3">
+    <%= button_to "Discover segments", discoveries_path, method: :post, class: "btn-primary" %>
+    <% if @proposed.any? || @accepted.any? %>
+      <span class="meta">Last run found <%= @proposed.size + @accepted.size %> groups</span>
+    <% end %>
+  </div>
+</section>
+
+<% if @insights.any? %>
+  <section class="mb-12 panel pt-8" aria-label="Audience insights">
+    <h2 class="font-display text-lg text-[var(--color-ink)]">What stands out</h2>
+    <p class="meta mt-1">Signals from the latest discovery — not a dashboard, just a few things worth knowing.</p>
+    <ul class="mt-6 space-y-4">
+      <% @insights.each do |insight| %>
+        <li class="grid gap-1 sm:grid-cols-[6.5rem_1fr] sm:gap-4">
+          <span class="brand-mark pt-0.5"><%= insight_label(insight.kind) %></span>
+          <p class="text-sm leading-relaxed text-[var(--color-ink)] sm:text-[0.95rem]"><%= insight.body %></p>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>
+
+<% if @accepted.any? %>
+  <section class="mb-12 panel pt-8">
+    <h2 class="font-display text-lg">Saved audiences</h2>
+    <p class="meta mt-1">Accepted segments you can target in a campaign.</p>
+    <div class="mt-4">
+      <% @accepted.each do |segment| %>
+        <%= render "segments/row", segment: segment, badge: "Saved" %>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<% if @proposed.any? %>
+  <section class="panel pt-8">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h2 class="font-display text-lg">Proposed segments</h2>
+        <p class="meta mt-1">Review the why, then accept or dismiss.</p>
+      </div>
+      <%= link_to "Open latest results", discovery_path(@latest_run), class: "btn-ghost" if @latest_run %>
+    </div>
+    <div class="mt-4">
+      <% @proposed.each do |segment| %>
+        <%= render "segments/row", segment: segment %>
+      <% end %>
+    </div>
+  </section>
+<% elsif @accepted.empty? %>
+  <section class="panel pt-10">
+    <p class="font-display text-xl text-[var(--color-ink-muted)]">No segments yet</p>
+    <p class="meta mt-2 max-w-md leading-relaxed">
+      Manual filter builders are still useful when you know the rule.
+      Discovery is for the moment you don’t — when the audience is in the data, not in your head.
+    </p>
+  </section>
+<% end %>
