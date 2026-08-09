@@ -62,7 +62,7 @@ Seeds load automatically when the contact table is empty.
 
 ## Staging
 
-**Live demo:** https://5c4fc7cdede105.lhr.life
+**Live demo:** https://6a03bdb3ebce78.lhr.life
 
 > Tunnelled to a local Rails process. Keep `bin/rails server` (and the SSH tunnel) running while reviewers browse. If the link expires:
 >

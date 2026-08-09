@@ -15,7 +15,7 @@ Thanks again for the challenge — enjoyed digging into Nitrosend.
 https://github.com/lamkimze/nitrosend-discover-segments/blob/main/docs/REPORT.md
 
 **Staging**  
-https://5c4fc7cdede105.lhr.life  
+https://6a03bdb3ebce78.lhr.life  
 
 Walkthrough: open Audiences → Discover segments → open a proposal (e.g. Japan · Luxury seekers) → read the reasons + campaign recommendation → Accept.
 
