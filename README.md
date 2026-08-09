@@ -10,7 +10,7 @@ Built with **Rails 8**, Hotwire, and Tailwind. Clustering is **deterministic** (
 | --- | --- |
 | UX / product report | [docs/REPORT.md](docs/REPORT.md) |
 | Feature demo | This app (local or staging URL below) |
-| GitHub | This repository — please add collaborators `@cosmoblk` and `@auscaster` |
+| GitHub | https://github.com/lamkimze/nitrosend-discover-segments — collaborators invited: `@cosmoblk`, `@auscaster` |
 
 ## Demo walkthrough (≈2 minutes)
 
