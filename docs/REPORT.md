@@ -179,5 +179,5 @@ Nitrosend already feels like the email tool built for how work is shifting. The 
 **Deliverables**
 
 - This report (`docs/REPORT.md`) — https://github.com/lamkimze/nitrosend-discover-segments/blob/main/docs/REPORT.md
-- Staging demo — https://6a03bdb3ebce78.lhr.life
+- Staging demo — https://contents-intranet-reproduce-wallpapers.trycloudflare.com
 - GitHub repository — https://github.com/lamkimze/nitrosend-discover-segments (collaborators invited: @cosmoblk, @auscaster)

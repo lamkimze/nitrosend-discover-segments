@@ -62,7 +62,9 @@ Seeds load automatically when the contact table is empty.
 
 ## Staging
 
-**Live demo:** https://6a03bdb3ebce78.lhr.life
+**Live demo:** https://contents-intranet-reproduce-wallpapers.trycloudflare.com
+
+Backup: https://36e79b0c3fc885.lhr.life · Local: http://127.0.0.1:3000
 
 > Tunnelled to a local Rails process. Keep `bin/rails server` (and the SSH tunnel) running while reviewers browse. If the link expires:
 >
