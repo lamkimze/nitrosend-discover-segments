@@ -1,6 +1,6 @@
 # Nitrosend Product & UX Challenge Report
 
-**Candidate prototype:** Discover Segments (Rails demo)  
+**Candidate prototype:** AI Smart Audiences (Rails demo)  
 **Brand context in demo:** Horizon Travel  
 **Date:** August 2026
 
@@ -12,7 +12,7 @@ Nitrosend’s positioning is unusually clear: email as something you *prompt*, n
 
 Today, segments are powerful but **operator-authored**: you must already know the rule. Lists, tags, saved views, and a filter builder cover the “I know what I want” case. They under-serve the “something is in this audience and I can’t quite name it” case — especially for agencies juggling brands they didn’t build from day one.
 
-**Discover Segments** (the accompanying prototype) proposes audiences from contact signals, explains *why* in plain language, and attaches a campaign angle. It complements the existing filter builder rather than replacing it. Separately, Nitrosend’s marketing now teases natural-language segment creation (“describe the audience”). Discovery and description solve different moments; both belong in the product.
+**Smart Audiences** (the accompanying prototype) analyses behavioural events, discovers segments, and **automatically assigns contacts**. Users review confidence and evidence, then create a campaign with the audience already selected. AI controls organisation; the user still controls sending. It complements the existing filter builder rather than replacing it. Separately, Nitrosend’s marketing teases natural-language segment creation (“describe the audience”). Discovery-from-data and description-from-intent solve different moments; both belong in the product.
 
 This report covers product/UX observations from exploring Nitrosend’s public product surface (app signup, marketing, docs, and feature model), then prioritises recommendations and ties them to the demo.
 
@@ -124,7 +124,7 @@ Speed is already a brand pillar. Perceived speed comes from:
 
 ---
 
-## 6. Proposed feature: Discover Segments
+## 6. Proposed feature: AI Smart Audiences
 
 ### Problem
 
@@ -132,37 +132,40 @@ Rule-based segments answer “find people who match X.” Marketers and agents o
 
 ### Solution
 
-**Discover Segments** analyses contact attributes and engagement, proposes 4–8 audiences, and for each shows:
+**Smart Audiences** analyses contact events (views, opens, clicks, purchases), discovers audiences, and automatically assigns memberships with scores and reasons. For each audience the UI shows:
 
-- Name and size  
-- Strength (cohesion + engagement)  
-- 2–3 plain-English reasons  
-- Sample people  
-- A recommended campaign subject and angle  
+- Name, size, and confidence
+- Plain-English evidence (“why this audience”)
+- Assigned contacts with per-person reasons
+- **Create campaign** with the audience already selected
 
-Users **accept** (becomes a reusable Nitrosend segment / audience) or **dismiss**. Manual filters remain available.
+Re-running analysis refreshes memberships as behaviour changes. Manual filters remain available elsewhere.
+
+### Boundary
+
+> AI controls audience organisation; the user still controls campaign sending.
 
 ### How it fits what you already have
 
 | Existing | Role |
 | --- | --- |
 | Filter builder / NL “describe audience” | Intent → rules |
-| Discover Segments | Data → proposals → human judgment |
-| Campaigns / Flows | Consume accepted audiences |
+| Smart Audiences | Behaviour → auto-organised audiences → human judgment on send |
+| Campaigns / Flows | Consume selected audiences |
 
-This is additive. Description and discovery are complementary verbs.
+### Engineering judgment
+
+- `Segmentation::Provider` abstraction (Demo + OpenAI-compatible)
+- Deterministic Demo provider for reliable staging
+- Async `AnalyseAudienceJob` with pollable status
+- Event-sourced profiles rather than hand-labelled segments in seed data
 
 ### Success metrics
 
-- Time from import → first accepted audience  
-- % of discovered segments accepted vs dismissed  
-- Sends using discovered audiences (7/30 day)  
-- Open/click lift vs brand average for those sends  
+- Time from import → first Smart Audience send
+- % of campaigns using Smart Audiences (7/30 day)
+- Membership stability vs churn on re-analysis
 - Qualitative: “I understood why these people were grouped”
-
-### Demo notes
-
-The Rails prototype uses **deterministic clustering** (no live LLM) so staging is reliable and explainability stays honest. Horizon Travel seed data encodes Japan/luxury, budget, family, adventure, and a “needs a closer look” bucket — matching the narrative in the application email.
 
 ---
 
@@ -179,5 +182,5 @@ Nitrosend already feels like the email tool built for how work is shifting. The 
 **Deliverables**
 
 - This report (`docs/REPORT.md`) — https://github.com/lamkimze/nitrosend-discover-segments/blob/main/docs/REPORT.md
-- Staging demo — https://contents-intranet-reproduce-wallpapers.trycloudflare.com
+- Staging demo — https://courses-briefs-census-florida.trycloudflare.com
 - GitHub repository — https://github.com/lamkimze/nitrosend-discover-segments (collaborators invited: @cosmoblk, @auscaster)

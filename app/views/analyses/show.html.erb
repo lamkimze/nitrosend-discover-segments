@@ -1,0 +1,43 @@
+<% content_for :title, "Analysing · Horizon Travel" %>
+
+<div
+  class="max-w-xl"
+  data-controller="analysis"
+  data-analysis-id-value="<%= @analysis.id %>"
+  data-analysis-status-value="<%= @analysis.status %>"
+  data-analysis-poll-url-value="<%= api_v1_audience_analysis_path(@analysis) %>"
+  data-analysis-done-url-value="<%= @analysis.completed? ? root_path : analysis_path(@analysis) %>"
+>
+  <% if @analysis.failed? %>
+    <p class="brand-mark">Something went wrong</p>
+    <h1 class="font-display mt-3 text-3xl tracking-tight">We couldn’t analyse your audience</h1>
+    <p class="meta mt-4 leading-relaxed">
+      Your contacts haven’t been changed.
+    </p>
+    <p class="mt-3 text-sm text-red-900"><%= @analysis.error_message %></p>
+    <div class="mt-8 flex gap-3">
+      <%= button_to "Try again", analyse_audience_path, method: :post, class: "btn-primary" %>
+      <%= link_to "Back to audiences", root_path, class: "btn-ghost" %>
+    </div>
+  <% elsif @analysis.completed? %>
+    <p class="brand-mark">Done</p>
+    <h1 class="font-display mt-3 text-3xl tracking-tight">
+      <%= pluralize(@analysis.segments_found, "Smart Audience") %> ready
+    </h1>
+    <p class="meta mt-4">Contacts were assigned automatically. Review the why, then create a campaign.</p>
+    <div class="mt-8">
+      <%= link_to "View Smart Audiences", root_path, class: "btn-primary" %>
+    </div>
+  <% else %>
+    <p class="brand-mark">Working</p>
+    <h1 class="font-display mt-3 text-3xl tracking-tight">Analysing your audience</h1>
+    <p class="meta mt-4 leading-relaxed">This usually takes less than a minute.</p>
+
+    <ol class="mt-8 space-y-3 text-sm" data-analysis-target="steps">
+      <li class="analyzing-step is-active" data-step="0">Looking at customer activity</li>
+      <li class="analyzing-step" data-step="1">Analysing engagement</li>
+      <li class="analyzing-step" data-step="2">Finding meaningful patterns</li>
+      <li class="analyzing-step" data-step="3">Assigning contacts to audiences</li>
+    </ol>
+  <% end %>
+</div>

@@ -1,40 +1,35 @@
 class Segment < ApplicationRecord
-  belongs_to :discovery_run
+  SOURCES = %w[ai manual system].freeze
+  STATUSES = %w[active archived].freeze
+
   has_many :segment_memberships, dependent: :destroy
   has_many :contacts, through: :segment_memberships
+  has_many :campaigns, dependent: :destroy
 
-  STATUSES = %w[proposed accepted dismissed].freeze
-  STRENGTHS = %w[strong moderate emerging].freeze
-
-  validates :name, :status, :strength, presence: true
+  validates :name, presence: true
+  validates :source, inclusion: { in: SOURCES }
   validates :status, inclusion: { in: STATUSES }
-  validates :strength, inclusion: { in: STRENGTHS }
 
-  scope :proposed, -> { where(status: "proposed").order(:position) }
-  scope :accepted, -> { where(status: "accepted").order(:position) }
-  scope :visible, -> { where(status: %w[proposed accepted]).order(:position) }
+  before_validation :ensure_slug, on: :create
 
-  def proposed?
-    status == "proposed"
+  scope :active, -> { where(status: "active").order(confidence_score: :desc, name: :asc) }
+
+  def refresh_contact_count!
+    update!(contact_count: segment_memberships.count)
   end
 
-  def accepted?
-    status == "accepted"
-  end
+  private
 
-  def dismissed?
-    status == "dismissed"
-  end
+  def ensure_slug
+    return if slug.present?
 
-  def sample_contacts(limit = 5)
-    contacts.order(:name).limit(limit)
-  end
-
-  def accept!
-    update!(status: "accepted")
-  end
-
-  def dismiss!
-    update!(status: "dismissed")
+    base = name.to_s.parameterize.presence || "audience"
+    candidate = base
+    n = 2
+    while Segment.exists?(slug: candidate)
+      candidate = "#{base}-#{n}"
+      n += 1
+    end
+    self.slug = candidate
   end
 end

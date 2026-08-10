@@ -1,85 +1,65 @@
-# Nitrosend Challenge — Discover Segments
+# Nitrosend Challenge — AI Smart Audiences
 
-Product Engineer challenge prototype: **AI-powered customer segment discovery** for [Nitrosend](https://nitrosend.com), plus a UX report.
+Focused Rails prototype: **AI organises audiences from behaviour; the user still controls sending.**
 
-Built with **Rails 8**, Hotwire, and Tailwind. Clustering is **deterministic** (no live LLM) so the demo is stable and explainable.
+## Product flow
 
-## Deliverables
+```
+Customer data → AI analyses behaviour → discovers segments → assigns contacts
+→ Smart Audiences stay updated → user reviews “why” → creates campaign
+```
 
-| Item | Location |
-| --- | --- |
-| UX / product report | [docs/REPORT.md](docs/REPORT.md) |
-| Feature demo | This app (local or staging URL below) |
-| GitHub | https://github.com/lamkimze/nitrosend-discover-segments — collaborators invited: `@cosmoblk`, `@auscaster` |
+## Stack
 
-## Demo walkthrough (≈2 minutes)
+- Rails 8 + Hotwire UI + JSON API
+- SQLite for portable staging (swap to PostgreSQL in production)
+- Deterministic `Segmentation::Providers::Demo` by default (`SEGMENTATION_PROVIDER=demo`)
+- Optional `openai` provider stub sharing the same interface
+- `AnalyseAudienceJob` via Active Job `:async` (single-process staging)
 
-1. Open the app → **Horizon Travel** audiences.
-2. Click **Discover segments**. Watch the short progress beat, then review proposed groups (e.g. *Japan · Luxury seekers*).
-3. Open a segment → read **Why this group** and the **campaign recommendation** → **Accept as segment**.
+## Demo walkthrough
 
-Optional: **Reset demo** clears proposals/accepted segments (contacts stay). Run discovery again anytime.
+1. Open **Smart Audiences** → see 500 contacts.
+2. Click **Analyse audience** → progress states while the job runs.
+3. Review audiences (Japan / Luxury / Budget / Highly Engaged) with confidence + evidence.
+4. Open an audience → see assigned contacts and reasons.
+5. Click **Create campaign** → audience already selected.
+6. Click **Analyse audience** again to refresh memberships.
 
 ## Local setup
 
 ```bash
-bin/setup          # bundle, db:prepare
-bin/rails db:seed  # Horizon Travel contacts (~112)
-bin/dev            # web + Tailwind watch
+bundle install
+bin/rails db:prepare db:seed
+bin/rails tailwindcss:build
+bin/dev   # or bin/rails server
 ```
 
-Visit [http://localhost:3000](http://localhost:3000).
+Visit http://localhost:3000
 
-Or:
+## API
 
-```bash
-bin/rails server
-bin/rails tailwindcss:watch   # separate terminal
-```
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/health` | `{ "status": "ok" }` |
+| POST | `/api/v1/audience/analyses` | Start analysis |
+| GET | `/api/v1/audience/analyses/:id` | Poll status |
+| GET | `/api/v1/segments` | List Smart Audiences |
+| GET | `/api/v1/segments/:id` | Segment detail |
+| GET | `/api/v1/segments/:id/contacts` | Members |
 
-## Design notes
+## Architecture note
 
-- Restraint over “AI SaaS” chrome: paper background, teal accent, list rows, no glowing metric cards.
-- Typography: Fraunces (display) + IBM Plex Sans (UI).
-- Every proposed segment includes plain-English reasons — explainability is the product.
-- Dropbox `DESIGN.md` / `theme.css` were not accessible during build; tokens can be swapped if those files are added later.
+AI provider is abstracted (`Segmentation::Provider`). Staging uses the Demo provider so George always gets:
 
-## How discovery works
+**Analyse → discover → auto-assign → inspect reasoning → create campaign**
 
-`SegmentDiscoveryService` buckets contacts by destination + trip style, merges thin groups, scores strength from engagement/cohesion, and attaches templated campaign recommendations plus a few insights. Seed data is fixed (`Random.new(42)`) so reviewers see the same story.
-
-## Docker
-
-```bash
-docker build -t nitrosend-discover .
-docker run --rm -p 3000:80 \
-  -e RAILS_MASTER_KEY="$(cat config/master.key)" \
-  --name nitrosend-discover \
-  nitrosend-discover
-```
-
-Seeds load automatically when the contact table is empty.
+Production can set `SEGMENTATION_PROVIDER=openai` without changing the domain layer.
 
 ## Staging
 
-**Live demo:** https://contents-intranet-reproduce-wallpapers.trycloudflare.com
+**Live demo:** https://courses-briefs-census-florida.trycloudflare.com
 
-Backup: https://36e79b0c3fc885.lhr.life · Local: http://127.0.0.1:3000
+Local: http://127.0.0.1:3000
 
-> Tunnelled to a local Rails process. Keep `bin/rails server` (and the SSH tunnel) running while reviewers browse. If the link expires:
->
-> ```bash
-> bin/rails server -p 3000 -b 127.0.0.1
-> ssh -R 80:127.0.0.1:3000 nokey@localhost.run
-> ```
->
-> For a longer-lived host, deploy the included `Dockerfile` / `render.yaml` to Render (set `RAILS_MASTER_KEY` from `config/master.key`).
-
-## Collaborators
-
-Invited with write access:
-
-- [@cosmoblk](https://github.com/cosmoblk)
-- [@auscaster](https://github.com/auscaster)
-
-Repo: https://github.com/lamkimze/nitrosend-discover-segments
+> Keep `bin/rails server` and the Cloudflare tunnel running while reviewers browse. Recreate with `cloudflared tunnel --url http://127.0.0.1:3000`.

@@ -1,84 +1,59 @@
-<% content_for :title, "#{@segment.name} · Segments" %>
+<% content_for :title, "#{@segment.name} · Smart Audiences" %>
 
 <nav class="mb-8">
-  <%= link_to "← Audiences", root_path, class: "btn-quiet px-0" %>
+  <%= link_to "← Smart Audiences", root_path, class: "btn-quiet px-0" %>
 </nav>
 
-<div class="grid gap-12 lg:grid-cols-[1.1fr_0.9fr]">
+<div class="grid gap-12 lg:grid-cols-[1.15fr_0.85fr]">
   <div>
-    <p class="brand-mark">
-      <%= @segment.accepted? ? "Saved audience" : "Proposed segment" %>
+    <p class="brand-mark">Smart Audience · <%= @segment.source %></p>
+    <h1 class="font-display mt-3 text-3xl tracking-tight sm:text-4xl"><%= @segment.name %></h1>
+    <p class="meta mt-3">
+      <%= pluralize(@segment.contact_count, "contact") %> ·
+      <%= (@segment.confidence_score.to_f * 100).round %>% confidence
     </p>
-
-    <%= form_with model: @segment, class: "mt-3" do |f| %>
-      <%= f.text_field :name,
-            class: "font-display w-full border-0 border-b border-transparent bg-transparent px-0 text-3xl tracking-tight text-[var(--color-ink)] focus:border-[var(--color-teal)] focus:ring-0 sm:text-4xl",
-            aria: { label: "Segment name" } %>
-      <div class="mt-2 flex items-center gap-3">
-        <%= f.submit "Rename", class: "btn-quiet px-0 text-xs uppercase tracking-wider" %>
-        <span class="meta inline-flex items-center gap-1.5 text-xs">
-          <span class="inline-block h-1.5 w-1.5 rounded-full <%= strength_dot_class(@segment.strength) %>"></span>
-          <%= @segment.strength.capitalize %> · <%= pluralize(@segment.contact_count, "contact") %>
-        </span>
-      </div>
-    <% end %>
+    <p class="mt-5 text-[0.95rem] leading-relaxed text-[var(--color-ink-muted)]"><%= @segment.description %></p>
 
     <section class="mt-10">
-      <h2 class="font-display text-lg">Why this group</h2>
+      <h2 class="font-display text-lg">Why we created this audience</h2>
       <ul class="reason-list mt-4 text-[0.95rem]">
-        <% Array(@segment.reasons).each do |reason| %>
-          <li><%= reason %></li>
+        <% Array(@segment.evidence).each do |line| %>
+          <li><%= line %></li>
         <% end %>
       </ul>
     </section>
 
-    <% if @segment.proposed? %>
-      <div class="mt-10 flex flex-wrap gap-3">
-        <%= button_to "Accept as segment", accept_segment_path(@segment), method: :post, class: "btn-primary" %>
-        <%= button_to "Dismiss", dismiss_segment_path(@segment), method: :post, class: "btn-ghost", form: { data: { turbo_confirm: "Dismiss this proposal?" } } %>
-      </div>
-    <% end %>
+    <div class="mt-10">
+      <%= link_to "Create campaign", new_segment_campaign_path(@segment), class: "btn-primary" %>
+    </div>
 
     <section class="mt-12 panel pt-8">
-      <h2 class="font-display text-lg">People in this segment</h2>
-      <p class="meta mt-1">A preview of membership — full lists would live in Contacts.</p>
+      <h2 class="font-display text-lg">Contacts</h2>
       <ul class="mt-6 divide-y divide-[var(--color-line)]">
-        <% @contacts.limit(12).each do |contact| %>
-          <li class="flex items-center gap-3 py-3">
-            <span class="avatar"><%= contact.initials %></span>
+        <% @memberships.limit(40).each do |membership| %>
+          <li class="flex items-start gap-3 py-3">
+            <span class="avatar"><%= membership.contact.initials %></span>
             <div class="min-w-0 flex-1">
-              <p class="truncate text-sm font-medium"><%= contact.name %></p>
-              <p class="meta truncate text-xs">
-                <%= [ contact.primary_destination, contact.trip_style&.capitalize, contact.engagement_label ].compact.join(" · ") %>
-              </p>
+              <p class="truncate text-sm font-medium"><%= membership.contact.full_name %></p>
+              <p class="meta truncate text-xs"><%= membership.contact.email %></p>
+              <% if membership.reason.present? %>
+                <p class="mt-1 text-xs leading-relaxed text-[var(--color-ink-muted)]"><%= membership.reason %></p>
+              <% end %>
             </div>
+            <span class="meta shrink-0 text-xs"><%= (membership.score.to_f * 100).round %>%</span>
           </li>
         <% end %>
       </ul>
-      <% if @contacts.size > 12 %>
-        <p class="meta mt-3">Showing 12 of <%= @contacts.size %></p>
+      <% if @memberships.size > 40 %>
+        <p class="meta mt-3">Showing 40 of <%= @memberships.size %></p>
       <% end %>
     </section>
   </div>
 
   <aside class="lg:border-l lg:border-[var(--color-line)] lg:pl-10">
-    <p class="brand-mark">Campaign recommendation</p>
-    <h2 class="font-display mt-3 text-2xl leading-snug text-[var(--color-ink)]">
-      <%= @segment.campaign_subject %>
-    </h2>
-    <div class="mt-8 space-y-6">
-      <div>
-        <h3 class="text-xs font-medium uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">Angle</h3>
-        <p class="mt-2 text-sm leading-relaxed text-[var(--color-ink)]"><%= @segment.campaign_angle %></p>
-      </div>
-      <div>
-        <h3 class="text-xs font-medium uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">Why this audience</h3>
-        <p class="mt-2 text-sm leading-relaxed text-[var(--color-ink-muted)]"><%= @segment.campaign_why %></p>
-      </div>
-    </div>
-    <p class="meta mt-10 border-t border-[var(--color-line)] pt-6 text-xs leading-relaxed">
-      Prototype note: accepting a segment here would create a Nitrosend audience you can pick in Campaigns or Flows.
-      Sending is not wired in this demo.
+    <p class="brand-mark">Boundary</p>
+    <p class="mt-3 text-sm leading-relaxed text-[var(--color-ink)]">
+      AI controls how this audience is organised. You still control whether — and what — to send.
     </p>
   </aside>
 </div>

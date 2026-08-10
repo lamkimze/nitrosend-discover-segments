@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title><%= content_for(:title) || "Discover Segments · Nitrosend" %></title>
+    <title><%= content_for(:title) || "Smart Audiences · Nitrosend" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="Nitrosend">
@@ -30,8 +30,7 @@
           <p class="mt-2 font-display text-xl text-[var(--color-ink)] sm:text-2xl">Horizon Travel</p>
         </div>
         <nav class="flex items-center gap-1 text-sm text-[var(--color-ink-muted)]">
-          <%= link_to "Audiences", root_path, class: "btn-quiet" %>
-          <%= button_to "Reset demo", demo_reset_path, method: :post, class: "btn-quiet", form: { data: { turbo_confirm: "Clear proposed and accepted segments? Contacts stay." } } %>
+          <%= link_to "Smart Audiences", root_path, class: "btn-quiet" %>
         </nav>
       </header>
 

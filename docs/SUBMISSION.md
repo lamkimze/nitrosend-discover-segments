@@ -1,30 +1,29 @@
 # Submission email draft
 
 To: george@nitrosend.com  
-Cc: Kam  
 
-Subject: Product & UX Challenge — Discover Segments
+Subject: Product & UX Challenge — AI Smart Audiences
 
 ---
 
 Hi George,
 
-Thanks again for the challenge — enjoyed digging into Nitrosend.
+Thanks again for the challenge.
 
 **Report**  
 https://github.com/lamkimze/nitrosend-discover-segments/blob/main/docs/REPORT.md
 
 **Staging**  
-https://contents-intranet-reproduce-wallpapers.trycloudflare.com
+https://courses-briefs-census-florida.trycloudflare.com  
 
-Walkthrough: open Audiences → Discover segments → open a proposal (e.g. Japan · Luxury seekers) → read the reasons + campaign recommendation → Accept.
+Walkthrough: Smart Audiences → Analyse audience → review Japan/Luxury/Budget/Engaged with evidence → View audience → Create campaign (audience pre-selected). Re-run Analyse to refresh memberships.
+
+**Boundary:** AI organises audiences; the user still controls sending.
 
 **GitHub**  
 https://github.com/lamkimze/nitrosend-discover-segments  
 
 Collaborators invited: `@cosmoblk` and `@auscaster`.
-
-Happy to talk through any of the observations or the prototype.
 
 Best,  
 Kim
