@@ -63,3 +63,9 @@ Production can set `SEGMENTATION_PROVIDER=openai` without changing the domain la
 Local: http://127.0.0.1:3000
 
 > Keep `bin/rails server` and the Cloudflare tunnel running while reviewers browse. Recreate with `cloudflared tunnel --url http://127.0.0.1:3000`.
+
+## Collaborators
+
+Invited with write access: [@cosmoblk](https://github.com/cosmoblk), [@auscaster](https://github.com/auscaster)
+
+Repo: https://github.com/lamkimze/nitrosend-discover-segments
