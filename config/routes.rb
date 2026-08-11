@@ -12,6 +12,7 @@ Rails.application.routes.draw do
     member do
       post :archive
     end
+    resources :memberships, only: :destroy, controller: "segment_memberships"
     resources :campaigns, only: %i[new create]
   end
   resources :campaigns, only: %i[show update]

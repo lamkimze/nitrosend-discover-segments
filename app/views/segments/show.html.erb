@@ -35,9 +35,22 @@
     </div>
 
     <section class="mt-12 panel pt-8">
-      <h2 class="font-display text-lg">Contacts</h2>
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 class="font-display text-lg">Contacts</h2>
+        <% if @total_memberships.positive? %>
+          <% from = ((@page - 1) * @per_page) + 1 %>
+          <% to = [ @page * @per_page, @total_memberships ].min %>
+          <p class="meta text-xs">
+            <%= from %>–<%= to %> of <%= @total_memberships %>
+            <% if @total_pages > 1 %>
+              · page <%= @page %> of <%= @total_pages %>
+            <% end %>
+          </p>
+        <% end %>
+      </div>
+
       <ul class="mt-6 divide-y divide-[var(--color-line)]">
-        <% @memberships.limit(40).each do |membership| %>
+        <% @memberships.each do |membership| %>
           <li class="flex items-start gap-3 py-3">
             <span class="avatar"><%= membership.contact.initials %></span>
             <div class="min-w-0 flex-1">
@@ -47,12 +60,46 @@
                 <p class="mt-1 text-xs leading-relaxed text-[var(--color-ink-muted)]"><%= membership.reason %></p>
               <% end %>
             </div>
-            <span class="meta shrink-0 text-xs"><%= (membership.score.to_f * 100).round %>%</span>
+            <div class="flex shrink-0 flex-col items-end gap-2">
+              <span class="meta text-xs"><%= (membership.score.to_f * 100).round %>%</span>
+              <%= button_to "Remove",
+                    segment_membership_path(@segment, membership, page: @page),
+                    method: :delete,
+                    class: "btn-quiet px-0 text-xs",
+                    form: { data: { turbo_confirm: "Remove #{membership.contact.full_name} from this audience?" } } %>
+            </div>
           </li>
         <% end %>
       </ul>
-      <% if @memberships.size > 40 %>
-        <p class="meta mt-3">Showing 40 of <%= @memberships.size %></p>
+
+      <% if @memberships.empty? %>
+        <p class="meta mt-6">No contacts in this audience.</p>
+      <% end %>
+
+      <% if @total_pages > 1 %>
+        <nav class="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-line)] pt-4" aria-label="Contact pages">
+          <% if @page > 1 %>
+            <%= link_to "← Previous", segment_path(@segment, page: @page - 1), class: "btn-ghost" %>
+          <% else %>
+            <span class="btn-ghost pointer-events-none opacity-40">← Previous</span>
+          <% end %>
+
+          <div class="flex flex-wrap items-center gap-1">
+            <% (1..@total_pages).each do |n| %>
+              <% if n == @page %>
+                <span class="px-2 py-1 font-display text-sm text-[var(--color-ink)]" aria-current="page"><%= n %></span>
+              <% else %>
+                <%= link_to n, segment_path(@segment, page: n), class: "px-2 py-1 text-sm text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]" %>
+              <% end %>
+            <% end %>
+          </div>
+
+          <% if @page < @total_pages %>
+            <%= link_to "Next →", segment_path(@segment, page: @page + 1), class: "btn-ghost" %>
+          <% else %>
+            <span class="btn-ghost pointer-events-none opacity-40">Next →</span>
+          <% end %>
+        </nav>
       <% end %>
     </section>
   </div>
@@ -63,7 +110,8 @@
       AI controls how this audience is organised. You still control whether — and what — to send.
     </p>
     <p class="meta mt-6 text-xs leading-relaxed">
-      Dismiss removes the proposal from this list. Membership scores and reasons stay inspectable until you dismiss — so an agent (or teammate) can challenge the grouping before anything goes out.
+      Remove drops one person from this audience without deleting their contact record.
+      Dismiss archives the whole proposal. Re-analyse may re-add people if behaviour still matches.
     </p>
   </aside>
 </div>
