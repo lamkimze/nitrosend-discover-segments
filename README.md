@@ -58,7 +58,7 @@ Production can set `SEGMENTATION_PROVIDER=openai` without changing the domain la
 
 ## Staging
 
-**Live demo:** https://e1381cced5ba87.lhr.life
+**Live demo:** https://375c666a46b2fa.lhr.life
 
 Local: http://127.0.0.1:3000
 
