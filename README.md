@@ -6,7 +6,7 @@ Focused Rails prototype: **AI organises audiences from behaviour; the user still
 
 ```
 Customer data → AI analyses behaviour → discovers segments → assigns contacts
-→ Smart Audiences stay updated → user reviews “why” → creates campaign
+→ Smart Audiences stay updated → user reviews “why” + campaign angle → creates campaign
 ```
 
 ## Stack
@@ -20,10 +20,10 @@ Customer data → AI analyses behaviour → discovers segments → assigns conta
 ## Demo walkthrough
 
 1. Open **Smart Audiences** → see 500 contacts.
-2. Click **Analyse audience** → progress states while the job runs.
-3. Review audiences (Japan / Luxury / Budget / Highly Engaged) with confidence + evidence.
-4. Open an audience → see assigned contacts and reasons.
-5. Click **Create campaign** → audience already selected.
+2. Click **Analyse audience** → progress states while the job runs (bookmarkable; leave and come back).
+3. Review audiences (Japan / Luxury / Budget / Highly Engaged) with confidence, evidence, and a **suggested campaign angle**.
+4. Open an audience → see assigned contacts and reasons — or **Dismiss** if unused.
+5. Click **Create campaign** → audience already selected; subject prefilled from the angle.
 6. Click **Analyse audience** again to refresh memberships.
 
 ## Local setup
@@ -50,15 +50,15 @@ Visit http://localhost:3000
 
 ## Architecture note
 
-AI provider is abstracted (`Segmentation::Provider`). Staging uses the Demo provider so George always gets:
+AI provider is abstracted (`Segmentation::Provider`). Staging uses the Demo provider so reviewers always get:
 
-**Analyse → discover → auto-assign → inspect reasoning → create campaign**
+**Analyse → discover → auto-assign → inspect reasoning → create campaign (or dismiss)**
 
 Production can set `SEGMENTATION_PROVIDER=openai` without changing the domain layer.
 
 ## Staging
 
-**Live demo:** https://recordings-missouri-recognised-ron.trycloudflare.com
+**Live demo:** https://cycling-wake-removable-nursery.trycloudflare.com
 
 Local: http://127.0.0.1:3000
 
@@ -69,3 +69,7 @@ Local: http://127.0.0.1:3000
 Invited with write access: [@cosmoblk](https://github.com/cosmoblk), [@auscaster](https://github.com/auscaster)
 
 Repo: https://github.com/lamkimze/nitrosend-discover-segments
+
+## Report
+
+See [docs/REPORT.md](docs/REPORT.md) for the Product & UX write-up.
