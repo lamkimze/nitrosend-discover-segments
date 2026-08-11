@@ -14,7 +14,7 @@ Thanks again for the challenge.
 https://github.com/lamkimze/nitrosend-discover-segments/blob/main/docs/REPORT.md
 
 **Staging**  
-https://courses-briefs-census-florida.trycloudflare.com  
+https://recordings-missouri-recognised-ron.trycloudflare.com
 
 Walkthrough: Smart Audiences → Analyse audience → review Japan/Luxury/Budget/Engaged with evidence → View audience → Create campaign (audience pre-selected). Re-run Analyse to refresh memberships.
 

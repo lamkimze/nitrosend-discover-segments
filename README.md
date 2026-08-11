@@ -58,7 +58,7 @@ Production can set `SEGMENTATION_PROVIDER=openai` without changing the domain la
 
 ## Staging
 
-**Live demo:** https://courses-briefs-census-florida.trycloudflare.com
+**Live demo:** https://recordings-missouri-recognised-ron.trycloudflare.com
 
 Local: http://127.0.0.1:3000
 

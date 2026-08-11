@@ -182,5 +182,5 @@ Nitrosend already feels like the email tool built for how work is shifting. The 
 **Deliverables**
 
 - This report (`docs/REPORT.md`) — https://github.com/lamkimze/nitrosend-discover-segments/blob/main/docs/REPORT.md
-- Staging demo — https://courses-briefs-census-florida.trycloudflare.com
+- Staging demo — https://recordings-missouri-recognised-ron.trycloudflare.com
 - GitHub repository — https://github.com/lamkimze/nitrosend-discover-segments (collaborators invited: @cosmoblk, @auscaster)
