@@ -58,11 +58,13 @@ Production can set `SEGMENTATION_PROVIDER=openai` without changing the domain la
 
 ## Staging
 
-**Live demo:** https://cycling-wake-removable-nursery.trycloudflare.com
+**Live demo:** https://e1381cced5ba87.lhr.life
 
 Local: http://127.0.0.1:3000
 
-> Keep `bin/rails server` and the Cloudflare tunnel running while reviewers browse. Recreate with `cloudflared tunnel --url http://127.0.0.1:3000`.
+> Keep `bin/rails server` and a public tunnel running while reviewers browse.
+> Cloudflare: `cloudflared tunnel --url http://127.0.0.1:3000`
+> Or localhost.run: `ssh -R 80:127.0.0.1:3000 nokey@localhost.run`
 
 ## Collaborators
 

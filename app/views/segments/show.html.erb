@@ -23,8 +23,15 @@
       </ul>
     </section>
 
-    <div class="mt-10">
+    <section class="mt-10 border-l-2 border-[var(--color-teal)] pl-4">
+      <h2 class="font-display text-lg">Suggested campaign angle</h2>
+      <p class="mt-3 text-sm font-medium leading-snug text-[var(--color-ink)]"><%= @angle[:subject] %></p>
+      <p class="meta mt-2 text-sm leading-relaxed"><%= @angle[:why] %></p>
+    </section>
+
+    <div class="mt-10 flex flex-wrap items-center gap-3">
       <%= link_to "Create campaign", new_segment_campaign_path(@segment), class: "btn-primary" %>
+      <%= button_to "Dismiss audience", archive_segment_path(@segment), method: :post, class: "btn-ghost", form: { data: { turbo_confirm: "Dismiss this audience? Contacts stay as they are." } } %>
     </div>
 
     <section class="mt-12 panel pt-8">
@@ -54,6 +61,9 @@
     <p class="brand-mark">Boundary</p>
     <p class="mt-3 text-sm leading-relaxed text-[var(--color-ink)]">
       AI controls how this audience is organised. You still control whether — and what — to send.
+    </p>
+    <p class="meta mt-6 text-xs leading-relaxed">
+      Dismiss removes the proposal from this list. Membership scores and reasons stay inspectable until you dismiss — so an agent (or teammate) can challenge the grouping before anything goes out.
     </p>
   </aside>
 </div>

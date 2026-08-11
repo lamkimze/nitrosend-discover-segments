@@ -9,6 +9,9 @@ Rails.application.routes.draw do
   end
   resources :analyses, only: :show
   resources :segments, only: :show do
+    member do
+      post :archive
+    end
     resources :campaigns, only: %i[new create]
   end
   resources :campaigns, only: %i[show update]

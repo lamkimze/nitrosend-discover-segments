@@ -61,8 +61,11 @@ class SegmentationDemoTest < ActiveSupport::TestCase
   end
 
   test "failed analysis does not raise past mark_failed when validate empty" do
-    Contact.delete_all
+    SegmentMembership.delete_all
+    Campaign.delete_all
+    Segment.delete_all
     Event.delete_all
+    Contact.delete_all
     analysis = AiAnalysisRun.create!(status: "pending")
     assert_raises(RuntimeError) do
       Segmentation::AnalyseAudience.call(analysis: analysis)

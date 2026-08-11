@@ -3,6 +3,12 @@ class AudiencesController < ApplicationController
     @contact_count = Contact.count
     @segments = Segment.active.includes(:segment_memberships)
     @latest = AiAnalysisRun.latest.first
+
+    if params[:analysed].present? && @latest&.completed?
+      count = @latest.segments_found
+      label = count == 1 ? "Smart Audience" : "Smart Audiences"
+      flash.now[:notice] = "#{count} #{label} ready to pick in Campaigns."
+    end
   end
 
   def show

@@ -6,7 +6,7 @@
   data-analysis-id-value="<%= @analysis.id %>"
   data-analysis-status-value="<%= @analysis.status %>"
   data-analysis-poll-url-value="<%= api_v1_audience_analysis_path(@analysis) %>"
-  data-analysis-done-url-value="<%= @analysis.completed? ? root_path : analysis_path(@analysis) %>"
+  data-analysis-done-url-value="<%= @analysis.completed? ? root_path(analysed: 1) : analysis_path(@analysis) %>"
 >
   <% if @analysis.failed? %>
     <p class="brand-mark">Something went wrong</p>
@@ -26,12 +26,15 @@
     </h1>
     <p class="meta mt-4">Contacts were assigned automatically. Review the why, then create a campaign.</p>
     <div class="mt-8">
-      <%= link_to "View Smart Audiences", root_path, class: "btn-primary" %>
+      <%= link_to "View Smart Audiences", root_path(analysed: 1), class: "btn-primary" %>
     </div>
   <% else %>
     <p class="brand-mark">Working</p>
     <h1 class="font-display mt-3 text-3xl tracking-tight">Analysing your audience</h1>
-    <p class="meta mt-4 leading-relaxed">This usually takes less than a minute.</p>
+    <p class="meta mt-4 leading-relaxed">
+      Looking at destinations, trip style, and engagement. You can leave this page and come back —
+      progress is tied to this run.
+    </p>
 
     <ol class="mt-8 space-y-3 text-sm" data-analysis-target="steps">
       <li class="analyzing-step is-active" data-step="0">Looking at customer activity</li>
@@ -39,5 +42,9 @@
       <li class="analyzing-step" data-step="2">Finding meaningful patterns</li>
       <li class="analyzing-step" data-step="3">Assigning contacts to audiences</li>
     </ol>
+
+    <p class="meta mt-10 text-xs">
+      Run id <%= @analysis.id %> · bookmark this page to resume
+    </p>
   <% end %>
 </div>

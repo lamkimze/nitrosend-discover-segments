@@ -45,7 +45,7 @@ export default class extends Controller {
       if (data.status === "completed" || data.status === "failed") {
         clearInterval(this.stepTimer)
         clearInterval(this.pollTimer)
-        window.location.href = data.status === "completed" ? "/" : `/analyses/${this.idValue}`
+        window.location.href = data.status === "completed" ? "/?analysed=1" : `/analyses/${this.idValue}`
       }
     } catch (_) {
       // keep polling

@@ -14,6 +14,11 @@
       <span class="meta">Last run found <%= @latest.segments_found %> audiences</span>
     <% elsif @latest&.failed? %>
       <span class="meta text-red-900">Last run failed — contacts unchanged</span>
+    <% elsif @latest && (@latest.pending? || @latest.processing?) %>
+      <span class="meta">
+        Analysis in progress —
+        <%= link_to "resume", analysis_path(@latest), class: "underline decoration-[var(--color-line)] underline-offset-2 hover:text-[var(--color-ink)]" %>
+      </span>
     <% end %>
   </div>
 </section>
@@ -34,6 +39,7 @@
   <% if @segments.any? %>
     <div class="mt-2">
       <% @segments.each do |segment| %>
+        <% angle = segment.campaign_angle %>
         <article class="segment-row">
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0 flex-1">
@@ -60,11 +66,18 @@
                   </ul>
                 </div>
               <% end %>
+
+              <div class="mt-5 border-l-2 border-[var(--color-line)] pl-4">
+                <p class="text-[0.65rem] font-medium uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">Suggested campaign angle</p>
+                <p class="mt-2 text-sm font-medium leading-snug text-[var(--color-ink)]"><%= angle[:subject] %></p>
+                <p class="meta mt-1 text-xs leading-relaxed"><%= angle[:why] %></p>
+              </div>
             </div>
 
             <div class="flex flex-col gap-2 sm:items-end">
               <%= link_to "View audience", segment_path(segment), class: "btn-ghost" %>
               <%= link_to "Create campaign", new_segment_campaign_path(segment), class: "btn-primary" %>
+              <%= button_to "Dismiss", archive_segment_path(segment), method: :post, class: "btn-quiet px-0", form: { data: { turbo_confirm: "Dismiss this audience? Contacts stay as they are." } } %>
             </div>
           </div>
         </article>

@@ -14,7 +14,7 @@ Thanks again for the challenge.
 https://github.com/lamkimze/nitrosend-discover-segments/blob/main/docs/REPORT.md
 
 **Staging**  
-https://cycling-wake-removable-nursery.trycloudflare.com  
+https://e1381cced5ba87.lhr.life  
 
 Walkthrough: Smart Audiences → Analyse audience → review Japan/Luxury/Budget/Engaged (evidence + suggested campaign angle) → View audience (per-person reasons) → Create campaign (audience pre-selected) → or Dismiss. Re-run Analyse to refresh memberships.
 

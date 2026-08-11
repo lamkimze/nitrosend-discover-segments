@@ -3,8 +3,9 @@ class CampaignsController < ApplicationController
   before_action :set_campaign, only: %i[show update]
 
   def new
+    angle = @segment.campaign_angle
     @campaign = @segment.campaigns.build(
-      subject: default_subject(@segment),
+      subject: angle[:subject],
       content: default_content(@segment)
     )
   end
@@ -43,17 +44,8 @@ class CampaignsController < ApplicationController
     params.require(:campaign).permit(:subject, :content)
   end
 
-  def default_subject(segment)
-    case segment.slug
-    when /japan/ then "Japan, at your pace — curated routes for travellers like you"
-    when /luxury/ then "Quiet luxury escapes — villas, drivers, and tables worth dressing for"
-    when /budget/ then "Smart travel without the markup — deals matched to how you explore"
-    when /engaged/ then "You’re one of our most curious travellers — here’s what’s next"
-    else "A trip shaped around how you travel"
-    end
-  end
-
   def default_content(segment)
-    "Hi there,\n\nWe put this together for the #{segment.name} audience (#{segment.contact_count} contacts).\n\n#{segment.description}\n\n— Horizon Travel"
+    angle = segment.campaign_angle
+    "Hi there,\n\nWe put this together for the #{segment.name} audience (#{segment.contact_count} contacts).\n\n#{segment.description}\n\nWhy this angle: #{angle[:why]}\n\n— Horizon Travel"
   end
 end
