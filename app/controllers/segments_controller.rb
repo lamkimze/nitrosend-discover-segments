@@ -12,7 +12,7 @@ class SegmentsController < ApplicationController
     @page = [ @page, @total_pages ].min
 
     @memberships = @segment.segment_memberships
-      .includes(:contact)
+      .includes(contact: :events)
       .order(score: :desc)
       .offset((@page - 1) * @per_page)
       .limit(@per_page)

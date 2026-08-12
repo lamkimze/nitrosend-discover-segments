@@ -1,41 +1,43 @@
 <% content_for :title, "#{@segment.name} · Smart Audiences" %>
 
-<nav class="mb-8">
+<nav class="mb-6">
   <%= link_to "← Smart Audiences", root_path, class: "btn-quiet px-0" %>
 </nav>
 
-<div class="grid gap-12 lg:grid-cols-[1.15fr_0.85fr]">
-  <div>
-    <p class="brand-mark">Smart Audience · <%= @segment.source %></p>
-    <h1 class="font-display mt-3 text-3xl tracking-tight sm:text-4xl"><%= @segment.name %></h1>
-    <p class="meta mt-3">
-      <%= pluralize(@segment.contact_count, "contact") %> ·
-      <%= (@segment.confidence_score.to_f * 100).round %>% confidence
-    </p>
-    <p class="mt-5 text-[0.95rem] leading-relaxed text-[var(--color-ink-muted)]"><%= @segment.description %></p>
+<div class="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:gap-8">
+  <div class="space-y-6">
+    <section class="surface px-5 py-6 sm:px-6">
+      <p class="eyebrow">Smart Audience · <%= @segment.source %></p>
+      <h1 class="font-display mt-2 text-3xl tracking-tight sm:text-4xl"><%= @segment.name %></h1>
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <p class="meta"><%= pluralize(@segment.contact_count, "contact") %></p>
+        <span class="confidence-pill"><%= (@segment.confidence_score.to_f * 100).round %>% confidence</span>
+      </div>
+      <p class="mt-4 text-[0.95rem] leading-relaxed text-[var(--color-ink-muted)]"><%= @segment.description %></p>
 
-    <section class="mt-10">
+      <div class="mt-6 flex flex-wrap items-center gap-2">
+        <%= link_to "Create campaign", new_segment_campaign_path(@segment), class: "btn-primary" %>
+        <%= button_to "Dismiss audience", archive_segment_path(@segment), method: :post, class: "btn-ghost", form: { data: { turbo_confirm: "Dismiss this audience? Contacts stay as they are." } } %>
+      </div>
+    </section>
+
+    <section class="surface px-5 py-6 sm:px-6">
       <h2 class="font-display text-lg">Why we created this audience</h2>
       <ul class="reason-list mt-4 text-[0.95rem]">
         <% Array(@segment.evidence).each do |line| %>
           <li><%= line %></li>
         <% end %>
       </ul>
+
+      <div class="angle-block mt-8">
+        <h2 class="font-display text-lg">Suggested campaign angle</h2>
+        <p class="mt-3 text-sm font-semibold leading-snug text-[var(--color-ink)]"><%= @angle[:subject] %></p>
+        <p class="meta mt-2 text-sm leading-relaxed"><%= @angle[:why] %></p>
+      </div>
     </section>
 
-    <section class="mt-10 border-l-2 border-[var(--color-teal)] pl-4">
-      <h2 class="font-display text-lg">Suggested campaign angle</h2>
-      <p class="mt-3 text-sm font-medium leading-snug text-[var(--color-ink)]"><%= @angle[:subject] %></p>
-      <p class="meta mt-2 text-sm leading-relaxed"><%= @angle[:why] %></p>
-    </section>
-
-    <div class="mt-10 flex flex-wrap items-center gap-3">
-      <%= link_to "Create campaign", new_segment_campaign_path(@segment), class: "btn-primary" %>
-      <%= button_to "Dismiss audience", archive_segment_path(@segment), method: :post, class: "btn-ghost", form: { data: { turbo_confirm: "Dismiss this audience? Contacts stay as they are." } } %>
-    </div>
-
-    <section class="mt-12 panel pt-8">
-      <div class="flex flex-wrap items-baseline justify-between gap-2">
+    <section class="surface overflow-hidden">
+      <div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--color-line)] px-5 py-4 sm:px-6">
         <h2 class="font-display text-lg">Contacts</h2>
         <% if @total_memberships.positive? %>
           <% from = ((@page - 1) * @per_page) + 1 %>
@@ -49,19 +51,30 @@
         <% end %>
       </div>
 
-      <ul class="mt-6 divide-y divide-[var(--color-line)]">
+      <ul class="divide-y divide-[var(--color-line)] px-5 sm:px-6">
         <% @memberships.each do |membership| %>
-          <li class="flex items-start gap-3 py-3">
+          <% activities = recent_activities(membership.contact, limit: 3) %>
+          <li class="flex items-start gap-3 py-3.5">
             <span class="avatar"><%= membership.contact.initials %></span>
             <div class="min-w-0 flex-1">
-              <p class="truncate text-sm font-medium"><%= membership.contact.full_name %></p>
+              <p class="truncate text-sm font-semibold"><%= membership.contact.full_name %></p>
               <p class="meta truncate text-xs"><%= membership.contact.email %></p>
               <% if membership.reason.present? %>
                 <p class="mt-1 text-xs leading-relaxed text-[var(--color-ink-muted)]"><%= membership.reason %></p>
               <% end %>
+              <% if activities.any? %>
+                <ul class="mt-2 space-y-0.5">
+                  <% activities.each do |event| %>
+                    <li class="truncate text-[0.7rem] text-[var(--color-ink-faint)]">
+                      <span class="font-semibold text-[var(--color-ink-muted)]"><%= event.label %></span>
+                      · <%= event.summary %>
+                    </li>
+                  <% end %>
+                </ul>
+              <% end %>
             </div>
-            <div class="flex shrink-0 flex-col items-end gap-2">
-              <span class="meta text-xs"><%= (membership.score.to_f * 100).round %>%</span>
+            <div class="flex shrink-0 flex-col items-end gap-1.5">
+              <span class="confidence-pill text-xs"><%= (membership.score.to_f * 100).round %>%</span>
               <%= button_to "Remove",
                     segment_membership_path(@segment, membership, page: @page),
                     method: :delete,
@@ -73,11 +86,11 @@
       </ul>
 
       <% if @memberships.empty? %>
-        <p class="meta mt-6">No contacts in this audience.</p>
+        <p class="meta px-5 py-8 sm:px-6">No contacts in this audience.</p>
       <% end %>
 
       <% if @total_pages > 1 %>
-        <nav class="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-line)] pt-4" aria-label="Contact pages">
+        <nav class="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--color-line)] px-5 py-4 sm:px-6" aria-label="Contact pages">
           <% if @page > 1 %>
             <%= link_to "← Previous", segment_path(@segment, page: @page - 1), class: "btn-ghost" %>
           <% else %>
@@ -104,14 +117,28 @@
     </section>
   </div>
 
-  <aside class="lg:border-l lg:border-[var(--color-line)] lg:pl-10">
-    <p class="brand-mark">Boundary</p>
-    <p class="mt-3 text-sm leading-relaxed text-[var(--color-ink)]">
-      AI controls how this audience is organised. You still control whether — and what — to send.
-    </p>
-    <p class="meta mt-6 text-xs leading-relaxed">
-      Remove drops one person from this audience without deleting their contact record.
-      Dismiss archives the whole proposal. Re-analyse may re-add people if behaviour still matches.
-    </p>
+  <aside class="space-y-4 lg:sticky lg:top-4 lg:self-start">
+    <div class="surface px-5 py-6 sm:px-6">
+      <p class="eyebrow">Data flow</p>
+      <ol class="meta mt-3 space-y-2 text-xs leading-relaxed">
+        <li><span class="font-semibold text-[var(--color-ink)]">1. HubSpot-style CRM</span> — contacts, page views, email opens/clicks, forms, purchases</li>
+        <li><span class="font-semibold text-[var(--color-ink)]">2. AI engine</span> — profiles activity and proposes audiences with confidence</li>
+        <li><span class="font-semibold text-[var(--color-ink)]">3. You</span> — review evidence, dismiss, or create a campaign</li>
+      </ol>
+      <p class="meta mt-4 text-xs leading-relaxed">
+        Not product analytics: this does not track in-app feature usage. It uses marketing CRM signals businesses already have.
+      </p>
+    </div>
+
+    <div class="surface px-5 py-6 sm:px-6">
+      <p class="eyebrow">Boundary</p>
+      <p class="mt-3 text-sm leading-relaxed text-[var(--color-ink)]">
+        AI controls how this audience is organised. You still control whether — and what — to send.
+      </p>
+      <p class="meta mt-5 text-xs leading-relaxed">
+        Remove drops one person from this audience without deleting their contact record.
+        Dismiss archives the whole proposal. Re-analyse may re-add people if behaviour still matches.
+      </p>
+    </div>
   </aside>
 </div>

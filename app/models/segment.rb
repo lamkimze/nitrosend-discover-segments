@@ -7,19 +7,27 @@ class Segment < ApplicationRecord
   ANGLES = {
     "japan" => {
       subject: "Japan, at your pace — curated routes for travellers like you",
-      why: "Matches repeated Japan destination interest with recent campaign engagement."
+      why: "Repeated Japan page views and related email clicks in HubSpot activity."
     },
     "luxury" => {
       subject: "Quiet luxury escapes — villas, drivers, and tables worth dressing for",
-      why: "High average purchase value and luxury product browsing suggest premium framing."
+      why: "High purchase value plus luxury page / CTA engagement from CRM data."
     },
     "budget" => {
       subject: "Smart travel without the markup — deals matched to how you explore",
-      why: "Value destinations and discount engagement call for deal-led creative, not upsell."
+      why: "Value destination pages and deal CTAs call for deal-led creative, not upsell."
     },
     "engaged" => {
       subject: "You’re one of our most curious travellers — here’s what’s next",
-      why: "Consistent opens and clicks mean a timely, personal update will land."
+      why: "Consistent HubSpot email opens and clicks mean a timely update will land."
+    },
+    "frequent" => {
+      subject: "Welcome back — trips tailored to how you’ve travelled with us",
+      why: "Multiple purchases on record make a loyalty / upsell angle natural."
+    },
+    "dormant" => {
+      subject: "Still dreaming of the next trip? Here’s a gentle nudge",
+      why: "Low recent website and email activity — re-engagement over hard sell."
     }
   }.freeze
 

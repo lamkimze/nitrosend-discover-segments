@@ -1,32 +1,32 @@
 <% content_for :title, "Create campaign · #{@segment.name}" %>
 
-<nav class="mb-8">
+<nav class="mb-6">
   <%= link_to "← #{@segment.name}", segment_path(@segment), class: "btn-quiet px-0" %>
 </nav>
 
-<section class="mx-auto max-w-2xl">
-  <p class="brand-mark">Campaign</p>
-  <h1 class="font-display mt-3 text-3xl tracking-tight">New campaign</h1>
+<section class="mx-auto max-w-2xl surface px-5 py-7 sm:px-7">
+  <p class="eyebrow">Campaign</p>
+  <h1 class="font-display mt-2 text-3xl tracking-tight">New campaign</h1>
 
-  <div class="mt-8 border-y border-[var(--color-line)] py-5">
-    <p class="text-[0.65rem] font-medium uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">Audience</p>
-    <p class="mt-2 font-display text-xl"><%= @segment.name %></p>
+  <div class="mt-6 border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-4">
+    <p class="field-label">Audience</p>
+    <p class="mt-1.5 font-display text-xl"><%= @segment.name %></p>
     <p class="meta mt-1"><%= pluralize(@segment.contact_count, "contact") %> · already selected</p>
     <% angle = @segment.campaign_angle %>
     <p class="meta mt-3 text-xs leading-relaxed">Angle: <%= angle[:why] %></p>
   </div>
 
-  <%= form_with model: [@segment, @campaign], class: "mt-8 space-y-6" do |f| %>
+  <%= form_with model: [@segment, @campaign], class: "mt-7 space-y-6" do |f| %>
     <div>
-      <%= f.label :subject, "Subject", class: "text-[0.65rem] font-medium uppercase tracking-[0.14em] text-[var(--color-ink-faint)]" %>
-      <%= f.text_field :subject, class: "mt-2 w-full border-0 border-b border-[var(--color-line)] bg-transparent px-0 py-2 text-lg focus:border-[var(--color-teal)] focus:ring-0" %>
+      <%= f.label :subject, "Subject", class: "field-label" %>
+      <%= f.text_field :subject, class: "field-input-underline" %>
     </div>
     <div>
-      <%= f.label :content, "Content", class: "text-[0.65rem] font-medium uppercase tracking-[0.14em] text-[var(--color-ink-faint)]" %>
-      <%= f.text_area :content, rows: 10, class: "mt-2 w-full border border-[var(--color-line)] bg-[var(--color-cream)] px-3 py-3 text-sm leading-relaxed focus:border-[var(--color-teal)] focus:ring-0" %>
+      <%= f.label :content, "Content", class: "field-label" %>
+      <%= f.text_area :content, rows: 10, class: "field-input text-sm leading-relaxed" %>
     </div>
-    <div class="flex gap-3">
-      <%= f.submit "Save campaign", class: "btn-primary" %>
+    <div class="flex flex-wrap gap-2">
+      <%= f.submit "Save campaign", class: "btn-primary cursor-pointer" %>
       <%= link_to "Cancel", segment_path(@segment), class: "btn-ghost" %>
     </div>
   <% end %>

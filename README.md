@@ -1,13 +1,25 @@
 # Nitrosend Challenge — AI Smart Audiences
 
-Focused Rails prototype: **AI organises audiences from behaviour; the user still controls sending.**
+Focused Rails prototype: **AI organises audiences from HubSpot-style CRM behaviour; the user still controls sending.**
 
 ## Product flow
 
 ```
-Customer data → AI analyses behaviour → discovers segments → assigns contacts
-→ Smart Audiences stay updated → user reviews “why” + campaign angle → creates campaign
+HubSpot-style CRM
+├── Contact data
+├── Website page views
+├── Email opens / clicks
+├── Forms / CTAs
+└── Purchase history
+        ↓
+AI engine (profiles → discovers segments → assigns contacts)
+        ↓
+Smart Audiences stay updated → user reviews “why” + campaign angle → creates campaign
 ```
+
+Example signal: repeated visits to `/japan-tours`, `/tokyo-hotels`, `/osaka-packages` plus Japan email clicks → **Japan Enthusiasts** (confidence ~0.9).
+
+This uses marketing CRM activity businesses already have — not in-app product analytics (feature usage, SaaS funnels, etc.).
 
 ## Stack
 
@@ -16,15 +28,16 @@ Customer data → AI analyses behaviour → discovers segments → assigns conta
 - Deterministic `Segmentation::Providers::Demo` by default (`SEGMENTATION_PROVIDER=demo`)
 - Optional `openai` provider stub sharing the same interface
 - `AnalyseAudienceJob` via Active Job `:async` (single-process staging)
+- `Hubspot::IngestActivities` accepts HubSpot-shaped activity payloads for the demo sync
 
 ## Demo walkthrough
 
-1. Open **Smart Audiences** → see 500 contacts.
-2. Click **Analyse audience** → progress states while the job runs (bookmarkable; leave and come back).
-3. Review audiences (Japan / Luxury / Budget / Highly Engaged) with confidence, evidence, and a **suggested campaign angle**.
-4. Open an audience → see assigned contacts and reasons — or **Dismiss** if unused.
+1. Open **Smart Audiences** → see ~500 contacts synced with page views, email engagement, and purchases.
+2. Click **Refresh all** → progress states while the job runs (bookmarkable; leave and come back).
+3. Review audiences (Japan Enthusiasts / Luxury / Budget / Highly Engaged / Frequent Buyers / Dormant) with confidence, evidence, and a **suggested campaign angle**.
+4. Open an audience → see assigned contacts, reasons, and recent CRM activity — or **Dismiss** if unused.
 5. Click **Create campaign** → audience already selected; subject prefilled from the angle.
-6. Click **Analyse audience** again to refresh memberships.
+6. Import a sample batch, then **Allocate new** to place only pending contacts.
 
 ## Local setup
 
@@ -52,7 +65,7 @@ Visit http://localhost:3000
 
 AI provider is abstracted (`Segmentation::Provider`). Staging uses the Demo provider so reviewers always get:
 
-**Analyse → discover → auto-assign → inspect reasoning → create campaign (or dismiss)**
+**CRM activity → discover → auto-assign → inspect reasoning → create campaign (or dismiss)**
 
 Production can set `SEGMENTATION_PROVIDER=openai` without changing the domain layer.
 
@@ -64,7 +77,7 @@ Local: http://127.0.0.1:3000
 
 > Keep `bin/rails server` and a public tunnel running while reviewers browse.
 > Cloudflare: `cloudflared tunnel --url http://127.0.0.1:3000`
-> Or localhost.run: `ssh -R 80:127.0.0.1:3000 nokey@localhost.run`
+> Or localhost.run: `ssh -R 80:http://127.0.0.1:3000 nokey@localhost.run`
 
 ## Collaborators
 

@@ -1,13 +1,12 @@
 module Contacts
-  # Imports contacts and attaches enough behavioural events for segmentation.
-  # New rows are flagged pending_allocation so incremental analyse can place
-  # them without reshuffling existing memberships.
+  # Imports contacts and attaches HubSpot-style behavioural events so
+  # segmentation has signal. New rows are flagged pending_allocation.
   class Import
     Result = Struct.new(:created, :skipped, :pending_count, keyword_init: true)
 
     PERSONAS = %w[japan luxury budget engaged mixed].freeze
 
-    def self.call(rows:, source: "import")
+    def self.call(rows:, source: "hubspot")
       new(rows: rows, source: source).call
     end
 
@@ -56,7 +55,7 @@ module Contacts
             source: @source,
             pending_allocation: true
           )
-          seed_events!(contact, attrs[:persona])
+          seed_hubspot_activity!(contact, attrs[:persona])
           created += 1
         end
       end
@@ -81,37 +80,59 @@ module Contacts
       }
     end
 
-    def seed_events!(contact, persona)
+    def seed_hubspot_activity!(contact, persona)
+      activities = []
+      email_events = []
+
       case persona
       when "japan"
-        3.times do
-          add(contact, "destination_viewed", destination: %w[Japan Tokyo Kyoto].sample(random: @rng))
+        activities = [
+          { type: "PAGE_VIEW", url: "/japan-tours", title: "Japan Tours", timestamp: 3.days.ago.iso8601 },
+          { type: "PAGE_VIEW", url: "/tokyo-hotels", timestamp: 2.days.ago.iso8601 },
+          { type: "PAGE_VIEW", url: "/osaka-packages", timestamp: 1.day.ago.iso8601 },
+          { type: "FORM_SUBMISSION", form: "Japan trip enquiry", url: "/japan-tours", timestamp: 1.day.ago.iso8601 }
+        ]
+        email_events = [
+          { type: "CLICK", campaign: "Japan Travel Deals", url: "https://horizon.example/japan-packages", timestamp: 2.days.ago.iso8601 }
+        ]
+        if @rng.rand < 0.5
+          activities << { type: "PURCHASE", destination: "Japan", style: "mid", value: @rng.rand(1800..4200), timestamp: 5.days.ago.iso8601 }
         end
-        add(contact, "campaign_clicked", campaign: "Japan spring")
-        add(contact, "purchase", destination: "Japan", style: "mid", value: @rng.rand(1800..4200)) if @rng.rand < 0.5
       when "luxury"
-        add(contact, "product_viewed", product: "Luxury villa", style: "luxury")
-        add(contact, "destination_viewed", destination: %w[Paris Maldives Italy].sample(random: @rng))
-        add(contact, "purchase", destination: "Maldives", style: "luxury", value: @rng.rand(3000..7500))
+        activities = [
+          { type: "PAGE_VIEW", url: "/luxury-villas", timestamp: 2.days.ago.iso8601 },
+          { type: "PAGE_VIEW", url: "/maldives-overwater", timestamp: 1.day.ago.iso8601 },
+          { type: "CTA_CLICK", cta: "Book luxury consultation", url: "/luxury-villas", timestamp: 1.day.ago.iso8601 },
+          { type: "PURCHASE", destination: "Maldives", style: "luxury", value: @rng.rand(3000..7500), timestamp: 4.days.ago.iso8601 }
+        ]
       when "budget"
-        add(contact, "destination_viewed", destination: %w[Thailand Bali Vietnam].sample(random: @rng))
-        add(contact, "product_viewed", product: "Discount hostel pass", style: "budget")
-        add(contact, "campaign_clicked", campaign: "Flash deals")
-        add(contact, "purchase", destination: "Thailand", style: "budget", value: @rng.rand(400..1000)) if @rng.rand < 0.6
+        activities = [
+          { type: "PAGE_VIEW", url: "/thailand-deals", timestamp: 3.days.ago.iso8601 },
+          { type: "PAGE_VIEW", url: "/budget-hostel-pass", timestamp: 2.days.ago.iso8601 },
+          { type: "CTA_CLICK", cta: "Flash deals", url: "/flash-deals", timestamp: 1.day.ago.iso8601 }
+        ]
+        email_events = [
+          { type: "CLICK", campaign: "Flash deals", url: "https://horizon.example/flash-deals", timestamp: 1.day.ago.iso8601 }
+        ]
+        if @rng.rand < 0.6
+          activities << { type: "PURCHASE", destination: "Thailand", style: "budget", value: @rng.rand(400..1000), timestamp: 6.days.ago.iso8601 }
+        end
       when "engaged"
-        8.times { add(contact, "campaign_opened", campaign: "Weekend tips") }
-        4.times { add(contact, "campaign_clicked", campaign: "New routes") }
+        email_events = Array.new(8) { |i| { type: "OPEN", campaign: "Weekend tips", timestamp: (i + 1).days.ago.iso8601 } }
+        email_events += Array.new(4) { |i| { type: "CLICK", campaign: "New routes", url: "https://horizon.example/offers", timestamp: (i + 1).days.ago.iso8601 } }
       else
-        add(contact, "destination_viewed", destination: %w[Spain Canada Mexico].sample(random: @rng))
-        add(contact, "campaign_opened", campaign: "Newsletter")
+        activities = [
+          { type: "PAGE_VIEW", url: %w[/spain-cities /canada-guides /mexico-beaches].sample(random: @rng), timestamp: 4.days.ago.iso8601 }
+        ]
+        email_events = [
+          { type: "OPEN", campaign: "Newsletter", timestamp: 3.days.ago.iso8601 }
+        ]
       end
-    end
 
-    def add(contact, type, **meta)
-      contact.events.create!(
-        event_type: type,
-        occurred_at: @rng.rand(1..20).days.ago,
-        metadata: meta
+      Hubspot::IngestActivities.call(
+        contact: contact,
+        activities: activities,
+        email_events: email_events
       )
     end
   end

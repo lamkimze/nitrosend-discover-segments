@@ -1,5 +1,25 @@
 module Segmentation
+  # Rolls HubSpot-style CRM + website + email activity into a compact profile
+  # the segmentation provider can score.
+  #
+  #   HubSpot
+  #   ├── Contact data
+  #   ├── Website page views
+  #   ├── Email opens / clicks
+  #   ├── Forms / CTAs
+  #   └── Purchase / deal history
+  #           ↓
+  #   BuildCustomerProfile
+  #           ↓
+  #   AI segments (Japan, Luxury, …)
   class BuildCustomerProfile
+    URL_INTEREST_RULES = [
+      [ /japan|tokyo|kyoto|osaka/i, "Japan" ],
+      [ /luxury|villa|maldives|suite|private.?escape|first.?class/i, "Luxury" ],
+      [ /budget|hostel|discount|deal|flash/i, "Budget" ],
+      [ /thailand|bali|vietnam|portugal|greece/i, "Value destinations" ]
+    ].freeze
+
     def self.call(contact)
       new(contact).call
     end
@@ -12,19 +32,28 @@ module Segmentation
     def call
       {
         contact_id: @contact.id,
-        destinations_viewed: destinations,
-        interests: interests,
+        source: @contact.source,
+        pages_visited: pages_visited,
+        page_interests: page_interests,
+        # Kept for scoring clarity — interests inferred from website URLs.
+        destinations_viewed: page_interests,
+        products_viewed: product_signals,
         engagement: {
-          emails_opened: count_of("campaign_opened"),
-          emails_clicked: count_of("campaign_clicked")
+          emails_opened: count_of("email_open"),
+          emails_clicked: count_of("email_click"),
+          campaigns_opened: campaign_names("email_open"),
+          campaigns_clicked: campaign_names("email_click")
         },
+        forms_submitted: forms_submitted,
+        cta_clicks: cta_clicks,
         purchases: {
           count: purchases.size,
           average_value: average_purchase_value,
           destinations: purchase_destinations,
           styles: purchase_styles
         },
-        products_viewed: products
+        last_activity_at: last_activity_at,
+        interests: interests
       }
     end
 
@@ -34,17 +63,56 @@ module Segmentation
       @events.count { |e| e.event_type == type }
     end
 
-    def destinations
+    def pages_visited
       @events
-        .select { |e| e.event_type == "destination_viewed" }
-        .map { |e| e.metadata["destination"] }
+        .select { |e| e.event_type == "page_view" }
+        .map { |e| e.metadata["url"] }
         .compact
     end
 
-    def products
+    def page_interests
+      pages_visited.filter_map { |url| interest_for(url) }.uniq
+    end
+
+    def interest_for(text)
+      URL_INTEREST_RULES.each do |pattern, label|
+        return label if text.to_s.match?(pattern)
+      end
+      nil
+    end
+
+    def product_signals
+      signals = []
+      pages_visited.each do |url|
+        signals << "Luxury" if url.to_s.match?(/luxury|villa|suite|private/i)
+        signals << "Budget" if url.to_s.match?(/budget|hostel|discount|deal/i)
+      end
+      cta_clicks.each do |cta|
+        signals << "Luxury" if cta.to_s.match?(/luxury|villa|premium/i)
+        signals << "Budget" if cta.to_s.match?(/budget|discount|deal/i)
+      end
+      signals
+    end
+
+    def campaign_names(type)
       @events
-        .select { |e| e.event_type == "product_viewed" }
-        .map { |e| e.metadata["product"] || e.metadata["style"] }
+        .select { |e| e.event_type == type }
+        .map { |e| e.metadata["campaign"] }
+        .compact
+        .uniq
+    end
+
+    def forms_submitted
+      @events
+        .select { |e| e.event_type == "form_submission" }
+        .map { |e| e.metadata["form"] }
+        .compact
+    end
+
+    def cta_clicks
+      @events
+        .select { |e| e.event_type == "cta_click" }
+        .map { |e| e.metadata["cta"] || e.metadata["url"] }
         .compact
     end
 
@@ -67,20 +135,24 @@ module Segmentation
       purchases.map { |e| e.metadata["style"] }.compact
     end
 
-    def interests
-      tags = []
-      dest_counts = destinations.tally
-      top_dest = dest_counts.max_by { |_, c| c }&.first
-      tags << top_dest if top_dest && dest_counts[top_dest] >= 2
+    def last_activity_at
+      @events.map(&:occurred_at).max
+    end
 
-      if purchase_styles.include?("luxury") || products.grep(/luxury/i).any?
+    def interests
+      tags = page_interests.dup
+
+      if purchase_styles.include?("luxury") || product_signals.grep(/luxury/i).any?
         tags << "Luxury travel"
       end
-      if purchase_styles.include?("budget") || products.grep(/budget|discount/i).any?
+      if purchase_styles.include?("budget") || product_signals.grep(/budget/i).any?
         tags << "Budget travel"
       end
-      if count_of("campaign_opened") + count_of("campaign_clicked") >= 8
+      if count_of("email_open") + count_of("email_click") >= 8
         tags << "Highly engaged"
+      end
+      if purchases.size >= 2
+        tags << "Frequent buyer"
       end
 
       tags.uniq

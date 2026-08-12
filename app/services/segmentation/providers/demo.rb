@@ -1,32 +1,45 @@
 module Segmentation
   module Providers
     # Deterministic provider for reliable staging demos.
+    # Scores HubSpot-style signals (pages, email, forms, purchases) into audiences.
     # Production can swap to OpenAI via SEGMENTATION_PROVIDER=openai.
     class Demo < Segmentation::Provider
       DEFINITIONS = [
         {
-          key: "japan-travellers",
-          name: "Japan Travellers",
-          description: "Strong interest in Japan travel across browsing, campaign engagement, and bookings.",
+          key: "japan-enthusiasts",
+          name: "Japan Enthusiasts",
+          description: "Repeated Japan page visits, related email clicks, and trip purchases from CRM activity.",
           min_score: 0.55
         },
         {
           key: "luxury-travellers",
           name: "Luxury Travellers",
-          description: "High-value purchase behaviour and luxury product browsing.",
+          description: "High-value purchases and luxury page / CTA engagement.",
           min_score: 0.55
         },
         {
           key: "budget-travellers",
           name: "Budget Travellers",
-          description: "Value-led browsing, discount campaign clicks, and lower-average purchases.",
+          description: "Value destinations, deal CTAs, and lower-average purchases.",
           min_score: 0.55
         },
         {
           key: "highly-engaged",
           name: "Highly Engaged",
-          description: "Opens and clicks travel emails consistently — ready for timely sends.",
+          description: "Consistent email opens and clicks — ready for timely sends.",
           min_score: 0.6
+        },
+        {
+          key: "frequent-buyers",
+          name: "Frequent Buyers",
+          description: "Multiple purchases on record — strong candidates for win-back or upsell.",
+          min_score: 0.55
+        },
+        {
+          key: "dormant-customers",
+          name: "Dormant Customers",
+          description: "Little recent website or email activity — candidates for re-engagement.",
+          min_score: 0.55
         }
       ].freeze
 
@@ -59,38 +72,42 @@ module Segmentation
 
       def score_for(key, profile)
         case key
-        when "japan-travellers"
-          japan_score(profile)
-        when "luxury-travellers"
-          luxury_score(profile)
-        when "budget-travellers"
-          budget_score(profile)
-        when "highly-engaged"
-          engaged_score(profile)
+        when "japan-enthusiasts" then japan_score(profile)
+        when "luxury-travellers" then luxury_score(profile)
+        when "budget-travellers" then budget_score(profile)
+        when "highly-engaged" then engaged_score(profile)
+        when "frequent-buyers" then frequent_buyer_score(profile)
+        when "dormant-customers" then dormant_score(profile)
         else
           [ 0.0, nil ]
         end
       end
 
       def japan_score(profile)
-        dests = Array(profile[:destinations_viewed]) + Array(profile.dig(:purchases, :destinations))
-        japanish = dests.count { |d| d.to_s.match?(/japan|tokyo|kyoto|osaka/i) }
-        opens = profile.dig(:engagement, :emails_opened).to_i
+        pages = Array(profile[:pages_visited])
+        japan_pages = pages.count { |u| u.to_s.match?(/japan|tokyo|kyoto|osaka/i) }
+        interests = Array(profile[:page_interests]) + Array(profile[:destinations_viewed])
+        japan_interest = interests.count { |d| d.to_s.match?(/japan/i) }
         clicks = profile.dig(:engagement, :emails_clicked).to_i
+        clicked_japan = Array(profile.dig(:engagement, :campaigns_clicked)).any? { |c| c.to_s.match?(/japan/i) }
+        forms = Array(profile[:forms_submitted]).count { |f| f.to_s.match?(/japan/i) }
         purchases = Array(profile.dig(:purchases, :destinations)).count { |d| d.to_s.match?(/japan/i) }
 
-        score = 0.2
-        score += [ japanish * 0.12, 0.45 ].min
-        score += 0.15 if clicks.positive? && japanish.positive?
+        score = 0.15
+        score += [ japan_pages * 0.12, 0.4 ].min
+        score += 0.12 if japan_interest.positive?
+        score += 0.15 if clicked_japan || (clicks.positive? && japan_pages.positive?)
+        score += 0.12 if forms.positive?
         score += 0.2 if purchases.positive?
-        score += 0.05 if opens >= 3
 
         reason = if purchases.positive?
-          "Purchased Japan travel and viewed related destinations"
-        elsif japanish >= 3
-          "Repeatedly viewed Japan destinations and engaged with related campaigns"
+          "Purchased Japan travel after viewing Japan pages and related email links"
+        elsif japan_pages >= 3
+          "Repeatedly visited Japan pages (e.g. tours, hotels) in HubSpot website activity"
+        elsif clicked_japan
+          "Clicked Japan campaign links and browsed related destination pages"
         else
-          "Showed Japan interest across browsing and email engagement"
+          "Showed Japan interest across website visits and email engagement"
         end
 
         [ [ score, 0.99 ].min, reason ]
@@ -100,15 +117,18 @@ module Segmentation
         avg = profile.dig(:purchases, :average_value).to_f
         styles = Array(profile.dig(:purchases, :styles)) + Array(profile[:products_viewed])
         luxury_hits = styles.count { |s| s.to_s.match?(/luxury|premium|suite|first.?class/i) }
-        score = 0.15
+        luxury_pages = Array(profile[:pages_visited]).count { |u| u.to_s.match?(/luxury|villa|maldives|private/i) }
+
+        score = 0.12
         score += 0.35 if avg >= 2500
         score += 0.25 if avg >= 4000
-        score += [ luxury_hits * 0.12, 0.36 ].min
+        score += [ luxury_hits * 0.1, 0.3 ].min
+        score += [ luxury_pages * 0.1, 0.2 ].min
 
         reason = if avg >= 2500
-          "Average purchase value $#{avg.round(0)} with luxury product interest"
+          "Average purchase value $#{avg.round(0)} with luxury page / product interest"
         else
-          "Browsed luxury packages and premium travel products"
+          "Visited luxury package pages and premium travel CTAs"
         end
 
         [ [ score, 0.99 ].min, reason ]
@@ -118,17 +138,19 @@ module Segmentation
         avg = profile.dig(:purchases, :average_value).to_f
         styles = Array(profile.dig(:purchases, :styles)) + Array(profile[:products_viewed])
         budget_hits = styles.count { |s| s.to_s.match?(/budget|discount|deal|hostel/i) }
-        dests = Array(profile[:destinations_viewed])
-        value_dests = dests.count { |d| d.to_s.match?(/thailand|bali|vietnam|portugal|greece/i) }
+        value_pages = Array(profile[:pages_visited]).count { |u| u.to_s.match?(/thailand|bali|vietnam|portugal|greece|budget|deal|hostel/i) }
+        deal_clicks = Array(profile.dig(:engagement, :campaigns_clicked)).count { |c| c.to_s.match?(/deal|flash|discount/i) }
+        deal_clicks += Array(profile[:cta_clicks]).count { |c| c.to_s.match?(/deal|discount|budget/i) }
 
-        score = 0.15
-        score += 0.3 if avg.positive? && avg < 1200
-        score += 0.15 if avg.zero? && budget_hits.positive?
-        score += [ budget_hits * 0.12, 0.3 ].min
-        score += [ value_dests * 0.08, 0.24 ].min
+        score = 0.12
+        score += 0.28 if avg.positive? && avg < 1200
+        score += 0.12 if avg.zero? && (budget_hits.positive? || value_pages.positive?)
+        score += [ budget_hits * 0.1, 0.25 ].min
+        score += [ value_pages * 0.08, 0.24 ].min
+        score += 0.1 if deal_clicks.positive?
 
-        reason = if budget_hits.positive?
-          "Engaged with discount and value-led travel content"
+        reason = if deal_clicks.positive? || budget_hits.positive?
+          "Engaged with discount CTAs / deal emails and value destination pages"
         else
           "Browsed value destinations with lower purchase affinity"
         end
@@ -144,7 +166,42 @@ module Segmentation
         score += 0.15 if clicks >= 4
         score += 0.1 if opens >= 8
 
-        reason = "Opened #{opens} and clicked #{clicks} campaign emails recently"
+        reason = "Opened #{opens} and clicked #{clicks} marketing emails in HubSpot engagement data"
+        [ [ score, 0.99 ].min, reason ]
+      end
+
+      def frequent_buyer_score(profile)
+        count = profile.dig(:purchases, :count).to_i
+        avg = profile.dig(:purchases, :average_value).to_f
+        score = 0.1
+        score += 0.45 if count >= 2
+        score += 0.25 if count >= 3
+        score += 0.1 if avg >= 1500
+
+        return [ 0.0, nil ] if count < 2
+
+        reason = "Recorded #{count} purchases in CRM deal / purchase history"
+        [ [ score, 0.99 ].min, reason ]
+      end
+
+      def dormant_score(profile)
+        last_at = profile[:last_activity_at]
+        return [ 0.0, nil ] if last_at.blank?
+
+        days = ((Time.current - last_at) / 1.day).floor
+        opens = profile.dig(:engagement, :emails_opened).to_i
+        clicks = profile.dig(:engagement, :emails_clicked).to_i
+        pages = Array(profile[:pages_visited]).size
+
+        score = 0.0
+        score += 0.45 if days >= 45
+        score += 0.25 if days >= 70
+        score += 0.15 if opens <= 1 && clicks.zero?
+        score += 0.1 if pages <= 1
+
+        return [ 0.0, nil ] if days < 40
+
+        reason = "Last HubSpot activity #{days} days ago — low recent email and website engagement"
         [ [ score, 0.99 ].min, reason ]
       end
 
@@ -155,35 +212,47 @@ module Segmentation
         return [] if size.zero?
 
         case key
-        when "japan-travellers"
-          viewed = subset.count { |p| Array(p[:destinations_viewed]).any? { |d| d.to_s.match?(/japan|tokyo|kyoto/i) } }
-          clicked = subset.count { |p| p.dig(:engagement, :emails_clicked).to_i.positive? && Array(p[:destinations_viewed]).any? { |d| d.to_s.match?(/japan/i) } }
+        when "japan-enthusiasts"
+          viewed = subset.count { |p| Array(p[:pages_visited]).any? { |u| u.to_s.match?(/japan|tokyo|kyoto|osaka/i) } }
+          clicked = subset.count { |p| Array(p.dig(:engagement, :campaigns_clicked)).any? { |c| c.to_s.match?(/japan/i) } }
           bought = subset.count { |p| Array(p.dig(:purchases, :destinations)).any? { |d| d.to_s.match?(/japan/i) } }
           [
-            "#{pct(viewed, size)} viewed Japan destinations",
-            "#{pct(clicked, size)} clicked Japan-related campaigns",
+            "#{pct(viewed, size)} viewed Japan website pages",
+            "#{pct(clicked, size)} clicked Japan-related email links",
             "#{pct(bought, size)} purchased Japan travel packages"
           ]
         when "luxury-travellers"
           high = subset.count { |p| p.dig(:purchases, :average_value).to_f >= 2500 }
-          lux = subset.count { |p| (Array(p[:products_viewed]) + Array(p.dig(:purchases, :styles))).any? { |s| s.to_s.match?(/luxury|premium/i) } }
+          lux = subset.count { |p| Array(p[:pages_visited]).any? { |u| u.to_s.match?(/luxury|villa|maldives|private/i) } || (Array(p[:products_viewed]) + Array(p.dig(:purchases, :styles))).any? { |s| s.to_s.match?(/luxury|premium/i) } }
           [
             "#{pct(high, size)} have high average purchase value",
-            "#{pct(lux, size)} browsed or bought luxury packages"
+            "#{pct(lux, size)} browsed luxury pages or bought premium packages"
           ]
         when "budget-travellers"
           low = subset.count { |p| v = p.dig(:purchases, :average_value).to_f; v.positive? && v < 1200 }
-          deals = subset.count { |p| (Array(p[:products_viewed]) + Array(p.dig(:purchases, :styles))).any? { |s| s.to_s.match?(/budget|discount|deal/i) } }
+          deals = subset.count { |p| Array(p[:pages_visited]).any? { |u| u.to_s.match?(/budget|deal|hostel|thailand|bali/i) } || (Array(p[:products_viewed]) + Array(p.dig(:purchases, :styles))).any? { |s| s.to_s.match?(/budget|discount|deal/i) } }
           [
-            "#{pct(deals, size)} engaged with discount or budget content",
+            "#{pct(deals, size)} engaged with deal or value destination content",
             "#{pct(low, size)} show lower average purchase value"
           ]
         when "highly-engaged"
           active = subset.count { |p| p.dig(:engagement, :emails_opened).to_i + p.dig(:engagement, :emails_clicked).to_i >= 8 }
           clickers = subset.count { |p| p.dig(:engagement, :emails_clicked).to_i >= 3 }
           [
-            "#{pct(active, size)} are consistently opening and clicking",
+            "#{pct(active, size)} consistently open and click marketing emails",
             "#{pct(clickers, size)} clicked 3+ campaign emails"
+          ]
+        when "frequent-buyers"
+          multi = subset.count { |p| p.dig(:purchases, :count).to_i >= 2 }
+          [
+            "#{pct(multi, size)} have 2+ purchases on record",
+            "Inferred from CRM purchase / deal history — not in-app product analytics"
+          ]
+        when "dormant-customers"
+          stale = subset.count { |p| p[:last_activity_at].present? && p[:last_activity_at] < 45.days.ago }
+          [
+            "#{pct(stale, size)} have no meaningful activity in 45+ days",
+            "Built from HubSpot website + email recency, not product feature usage"
           ]
         else
           []

@@ -14,7 +14,7 @@ class ContactImportsController < ApplicationController
       return
     end
 
-    result = Contacts::Import.call(rows: rows, source: "import")
+    result = Contacts::Import.call(rows: rows, source: params[:sample].present? ? "hubspot" : "import")
     notice = "Imported #{result.created} contacts"
     notice += " (#{result.skipped} skipped)" if result.skipped.positive?
     notice += ". #{result.pending_count} waiting to be allocated."

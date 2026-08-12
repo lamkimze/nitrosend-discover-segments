@@ -16,16 +16,17 @@ class IncrementalAllocationTest < ActiveSupport::TestCase
         email: "base#{i}@example.com",
         first_name: "Base",
         last_name: "J#{i}",
-        pending_allocation: false
+        pending_allocation: false,
+        source: "hubspot"
       )
-      3.times { c.events.create!(event_type: "destination_viewed", occurred_at: 1.day.ago, metadata: { "destination" => "Japan" }) }
-      c.events.create!(event_type: "campaign_clicked", occurred_at: 1.day.ago, metadata: { "campaign" => "Japan" })
+      3.times { c.events.create!(event_type: "page_view", occurred_at: 1.day.ago, metadata: { "url" => "/japan-tours" }) }
+      c.events.create!(event_type: "email_click", occurred_at: 1.day.ago, metadata: { "campaign" => "Japan Travel Deals" })
       c.events.create!(event_type: "purchase", occurred_at: 2.days.ago, metadata: { "destination" => "Japan", "style" => "mid", "value" => 2200 })
     end
 
     analysis = AiAnalysisRun.create!(status: "pending", mode: "full")
     Segmentation::AnalyseAudience.call(analysis: analysis)
-    @japan = Segment.find_by!(name: "Japan Travellers")
+    @japan = Segment.find_by!(name: "Japan Enthusiasts")
     @original_ids = @japan.contact_ids.sort
     @original_count = @japan.contact_count
   end
@@ -50,7 +51,7 @@ class IncrementalAllocationTest < ActiveSupport::TestCase
     @japan.reload
     assert_operator @japan.contact_count, :>=, @original_count
     @original_ids.each do |id|
-      assert @japan.contact_ids.include?(id), "existing contact #{id} must stay in Japan Travellers"
+      assert @japan.contact_ids.include?(id), "existing contact #{id} must stay in Japan Enthusiasts"
     end
 
     new_ids = Contact.where("email LIKE ?", "new%@example.com").pluck(:id)
