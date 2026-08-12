@@ -7,6 +7,7 @@ Rails.application.routes.draw do
   resource :audience, only: :show, controller: "audiences" do
     post :analyse
   end
+  resources :contact_imports, only: :create
   resources :analyses, only: :show
   resources :segments, only: :show do
     member do

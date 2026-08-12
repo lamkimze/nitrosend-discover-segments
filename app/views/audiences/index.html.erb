@@ -4,31 +4,94 @@
   <p class="brand-mark">Audience</p>
   <h1 class="font-display mt-3 text-3xl tracking-tight sm:text-4xl">Smart Audiences</h1>
   <p class="meta mt-4 text-base leading-relaxed">
-    <%= @contact_count %> contacts. AI organises people from behaviour —
-    destinations viewed, campaign engagement, purchases — then you decide what to send.
+    <%= @contact_count %> contacts<% if @pending_count.positive? %>,
+      <span class="text-[var(--color-ink)]"><%= @pending_count %> newly imported</span> waiting to be allocated<% end %>.
+    AI organises people from behaviour — destinations viewed, campaign engagement, purchases — then you decide what to send.
   </p>
 
   <div class="mt-8 flex flex-wrap items-center gap-3">
-    <%= button_to "Analyse audience", analyse_audience_path, method: :post, class: "btn-primary" %>
-    <% if @latest&.completed? %>
-      <span class="meta">Last run found <%= @latest.segments_found %> audiences</span>
-    <% elsif @latest&.failed? %>
-      <span class="meta text-red-900">Last run failed — contacts unchanged</span>
-    <% elsif @latest && (@latest.pending? || @latest.processing?) %>
-      <span class="meta">
-        Analysis in progress —
-        <%= link_to "resume", analysis_path(@latest), class: "underline decoration-[var(--color-line)] underline-offset-2 hover:text-[var(--color-ink)]" %>
-      </span>
-    <% end %>
+    <%= button_to "Allocate new contacts",
+          analyse_audience_path(mode: "incremental"),
+          method: :post,
+          class: "btn-primary",
+          disabled: @pending_count.zero?,
+          form: { class: "inline" } %>
+    <%= button_to "Refresh all from latest behaviour",
+          analyse_audience_path(mode: "full"),
+          method: :post,
+          class: "btn-ghost",
+          form: {
+            class: "inline",
+            data: {
+              turbo_confirm: "This rebuilds every Smart Audience from the latest behaviour. Contacts can move between groups. Continue?"
+            }
+          } %>
   </div>
+
+  <p class="meta mt-3 max-w-xl text-xs leading-relaxed">
+    <strong class="font-medium text-[var(--color-ink-muted)]">Allocate</strong> places only newly imported contacts into existing audiences (or new ones). Existing memberships stay put.
+    <strong class="font-medium text-[var(--color-ink-muted)]">Refresh all</strong> re-reads everyone’s latest behaviour and may move people between audiences.
+  </p>
+
+  <% if @latest&.completed? %>
+    <p class="meta mt-4">
+      Last run:
+      <%= @latest.incremental? ? "allocated new contacts" : "full refresh" %>
+      · <%= @latest.segments_found %> audiences
+      <% if @latest.incremental? && @latest.summary["pending_allocated"].present? %>
+        · <%= @latest.summary["pending_allocated"] %> placed
+      <% end %>
+    </p>
+  <% elsif @latest&.failed? %>
+    <p class="meta mt-4 text-red-900">Last run failed — memberships unchanged</p>
+  <% elsif @latest && (@latest.pending? || @latest.processing?) %>
+    <p class="meta mt-4">
+      Analysis in progress —
+      <%= link_to "resume", analysis_path(@latest), class: "underline decoration-[var(--color-line)] underline-offset-2 hover:text-[var(--color-ink)]" %>
+    </p>
+  <% end %>
+</section>
+
+<section class="mb-12 panel max-w-2xl pt-6">
+  <h2 class="font-display text-lg">Import contacts</h2>
+  <p class="meta mt-2 leading-relaxed">
+    New imports are flagged for allocation. They can join current audiences or seed a new one.
+    People already in an audience stay there unless you run a full refresh.
+  </p>
+
+  <div class="mt-5 flex flex-wrap items-center gap-3">
+    <%= button_to "Import sample batch (25)",
+          contact_imports_path(sample: 1, count: 25),
+          method: :post,
+          class: "btn-ghost" %>
+  </div>
+
+  <%= form_with url: contact_imports_path, method: :post, class: "mt-6 space-y-3" do %>
+    <label class="block text-[0.65rem] font-medium uppercase tracking-[0.14em] text-[var(--color-ink-faint)]" for="csv">
+      Or paste CSV
+    </label>
+    <textarea
+      id="csv"
+      name="csv"
+      rows="5"
+      class="w-full rounded-md border border-[var(--color-line)] bg-white/70 px-3 py-2 font-mono text-xs leading-relaxed text-[var(--color-ink)] placeholder:text-[var(--color-ink-faint)]"
+      placeholder="email,first_name,last_name,country,persona&#10;alex@example.com,Alex,Nguyen,AU,japan"
+    ></textarea>
+    <p class="meta text-xs">Optional persona: japan, luxury, budget, engaged, mixed — used to seed demo behaviour.</p>
+    <div>
+      <%= submit_tag "Import CSV", class: "btn-primary cursor-pointer" %>
+    </div>
+  <% end %>
 </section>
 
 <% if @latest&.completed? && @latest.summary.present? && @latest.summary["segments"].present? %>
   <section class="mb-10 panel pt-6">
-    <p class="brand-mark">Latest refresh</p>
+    <p class="brand-mark"><%= @latest.incremental? ? "Latest allocation" : "Latest refresh" %></p>
     <p class="meta mt-2">
-      +<%= @latest.summary["added_memberships"] %> memberships ·
-      −<%= @latest.summary["removed_memberships"] %> memberships moved or removed
+      +<%= @latest.summary["added_memberships"] %> memberships
+      <% unless @latest.incremental? %>
+        · −<%= @latest.summary["removed_memberships"] %> memberships moved or removed
+      <% end %>
     </p>
   </section>
 <% end %>
@@ -86,7 +149,7 @@
   <% else %>
     <p class="font-display mt-6 text-xl text-[var(--color-ink-muted)]">No Smart Audiences yet</p>
     <p class="meta mt-2 max-w-md leading-relaxed">
-      Analyse your audience to discover groups from behaviour. Contacts stay untouched until analysis completes successfully.
+      Run a full refresh to discover audiences from behaviour, or import contacts and allocate them once audiences exist.
     </p>
   <% end %>
 </section>

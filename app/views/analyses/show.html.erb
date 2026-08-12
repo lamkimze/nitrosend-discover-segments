@@ -1,4 +1,4 @@
-<% content_for :title, "Analysing · Horizon Travel" %>
+<% content_for :title, (@analysis.incremental? ? "Allocating · Horizon Travel" : "Refreshing · Horizon Travel") %>
 
 <div
   class="max-w-xl"
@@ -10,41 +10,71 @@
 >
   <% if @analysis.failed? %>
     <p class="brand-mark">Something went wrong</p>
-    <h1 class="font-display mt-3 text-3xl tracking-tight">We couldn’t analyse your audience</h1>
+    <h1 class="font-display mt-3 text-3xl tracking-tight">
+      <%= @analysis.incremental? ? "We couldn’t allocate new contacts" : "We couldn’t refresh audiences" %>
+    </h1>
     <p class="meta mt-4 leading-relaxed">
-      Your contacts haven’t been changed.
+      Existing memberships haven’t been changed.
     </p>
     <p class="mt-3 text-sm text-red-900"><%= @analysis.error_message %></p>
-    <div class="mt-8 flex gap-3">
-      <%= button_to "Try again", analyse_audience_path, method: :post, class: "btn-primary" %>
+    <div class="mt-8 flex flex-wrap gap-3">
+      <% if @analysis.incremental? %>
+        <%= button_to "Try allocate again", analyse_audience_path(mode: "incremental"), method: :post, class: "btn-primary" %>
+      <% else %>
+        <%= button_to "Try refresh again", analyse_audience_path(mode: "full"), method: :post, class: "btn-primary" %>
+      <% end %>
       <%= link_to "Back to audiences", root_path, class: "btn-ghost" %>
     </div>
   <% elsif @analysis.completed? %>
     <p class="brand-mark">Done</p>
     <h1 class="font-display mt-3 text-3xl tracking-tight">
-      <%= pluralize(@analysis.segments_found, "Smart Audience") %> ready
+      <% if @analysis.incremental? %>
+        New contacts allocated
+      <% else %>
+        <%= pluralize(@analysis.segments_found, "Smart Audience") %> refreshed
+      <% end %>
     </h1>
-    <p class="meta mt-4">Contacts were assigned automatically. Review the why, then create a campaign.</p>
+    <p class="meta mt-4">
+      <% if @analysis.incremental? %>
+        <%= @analysis.summary["pending_allocated"].to_i %> new contacts placed. Existing group memberships were left untouched.
+      <% else %>
+        Audiences were rebuilt from the latest behaviour. Review the why, then create a campaign.
+      <% end %>
+    </p>
     <div class="mt-8">
       <%= link_to "View Smart Audiences", root_path(analysed: 1), class: "btn-primary" %>
     </div>
   <% else %>
     <p class="brand-mark">Working</p>
-    <h1 class="font-display mt-3 text-3xl tracking-tight">Analysing your audience</h1>
+    <h1 class="font-display mt-3 text-3xl tracking-tight">
+      <%= @analysis.incremental? ? "Allocating new contacts" : "Refreshing audiences from latest behaviour" %>
+    </h1>
     <p class="meta mt-4 leading-relaxed">
-      Looking at destinations, trip style, and engagement. You can leave this page and come back —
-      progress is tied to this run.
+      <% if @analysis.incremental? %>
+        Placing newly imported contacts into existing audiences — or opening a new one when the pattern is strong enough.
+        People already in a group stay there.
+      <% else %>
+        Looking at destinations, trip style, and engagement across everyone. Memberships can move.
+      <% end %>
+      You can leave this page and come back — progress is tied to this run.
     </p>
 
     <ol class="mt-8 space-y-3 text-sm" data-analysis-target="steps">
-      <li class="analyzing-step is-active" data-step="0">Looking at customer activity</li>
-      <li class="analyzing-step" data-step="1">Analysing engagement</li>
-      <li class="analyzing-step" data-step="2">Finding meaningful patterns</li>
-      <li class="analyzing-step" data-step="3">Assigning contacts to audiences</li>
+      <% if @analysis.incremental? %>
+        <li class="analyzing-step is-active" data-step="0">Reading newly imported contacts</li>
+        <li class="analyzing-step" data-step="1">Matching behaviour to current audiences</li>
+        <li class="analyzing-step" data-step="2">Opening new audiences when needed</li>
+        <li class="analyzing-step" data-step="3">Placing contacts without moving existing ones</li>
+      <% else %>
+        <li class="analyzing-step is-active" data-step="0">Fetching the latest customer activity</li>
+        <li class="analyzing-step" data-step="1">Analysing engagement</li>
+        <li class="analyzing-step" data-step="2">Finding meaningful patterns</li>
+        <li class="analyzing-step" data-step="3">Reallocating contacts across audiences</li>
+      <% end %>
     </ol>
 
     <p class="meta mt-10 text-xs">
-      Run id <%= @analysis.id %> · bookmark this page to resume
+      Run id <%= @analysis.id %> · <%= @analysis.mode %> · bookmark this page to resume
     </p>
   <% end %>
 </div>

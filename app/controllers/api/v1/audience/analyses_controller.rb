@@ -5,11 +5,22 @@ module Api
         protect_from_forgery with: :null_session
 
         def create
-          analysis = AiAnalysisRun.create!(status: "pending", model: ENV.fetch("SEGMENTATION_PROVIDER", "demo"))
+          mode = params[:mode].presence_in(AiAnalysisRun::MODES) || "full"
+
+          if mode == "incremental" && Contact.pending_allocation.none?
+            return render json: { error: "No newly imported contacts to allocate" }, status: :unprocessable_entity
+          end
+
+          analysis = AiAnalysisRun.create!(
+            status: "pending",
+            mode: mode,
+            model: ENV.fetch("SEGMENTATION_PROVIDER", "demo")
+          )
           AnalyseAudienceJob.perform_later(analysis.id)
           render json: {
             id: analysis.id,
-            status: analysis.status
+            status: analysis.status,
+            mode: analysis.mode
           }, status: :accepted
         end
 
@@ -18,6 +29,7 @@ module Api
           render json: {
             id: analysis.id,
             status: analysis.status,
+            mode: analysis.mode,
             model: analysis.model,
             contact_count: analysis.contact_count,
             segments_found: analysis.segments_found,

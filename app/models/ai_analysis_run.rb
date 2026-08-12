@@ -1,7 +1,9 @@
 class AiAnalysisRun < ApplicationRecord
   STATUSES = %w[pending processing completed failed].freeze
+  MODES = %w[incremental full].freeze
 
   validates :status, inclusion: { in: STATUSES }
+  validates :mode, inclusion: { in: MODES }
 
   scope :latest, -> { order(created_at: :desc) }
 
@@ -9,6 +11,9 @@ class AiAnalysisRun < ApplicationRecord
   def processing? = status == "processing"
   def completed? = status == "completed"
   def failed? = status == "failed"
+
+  def incremental? = mode == "incremental"
+  def full? = mode == "full"
 
   def mark_processing!
     update!(status: "processing", started_at: Time.current, error_message: nil)

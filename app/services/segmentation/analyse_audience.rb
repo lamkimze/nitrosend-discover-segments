@@ -8,21 +8,43 @@ module Segmentation
 
     def initialize(analysis:)
       @analysis = analysis
+      @mode = analysis.mode.to_sym
     end
 
     def call
       @analysis.mark_processing!
+
+      pending_ids = Contact.pending_allocation.pluck(:id)
+      if @mode == :incremental && pending_ids.empty?
+        raise "No newly imported contacts to allocate. Import contacts first, or run a full refresh."
+      end
+
       @analysis.update!(contact_count: Contact.count, model: provider_name)
 
+      # Always profile everyone so new segments can still include long-standing contacts.
       profiles = Contact.includes(:events).map { |c| BuildCustomerProfile.call(c) }
       raw = provider.analyse(profiles)
       validated = validate!(raw)
 
       before_counts = Segment.active.index_by(&:slug).transform_values(&:contact_count)
-      segments = MembershipUpdater.call(result: validated, analysis: @analysis)
+      segments = MembershipUpdater.call(
+        result: validated,
+        analysis: @analysis,
+        mode: @mode,
+        pending_contact_ids: pending_ids
+      )
       after = Segment.active.index_by(&:slug)
 
-      summary = build_summary(before_counts, after)
+      if @mode == :incremental
+        Contact.where(id: pending_ids).update_all(pending_allocation: false, updated_at: Time.current)
+      else
+        Contact.pending_allocation.update_all(pending_allocation: false, updated_at: Time.current)
+      end
+
+      summary = build_summary(before_counts, after).merge(
+        "mode" => @mode.to_s,
+        "pending_allocated" => (@mode == :incremental ? pending_ids.size : 0)
+      )
       @analysis.mark_completed!(segments_found: segments.size, summary: summary)
 
       Result.new(analysis: @analysis, segments: segments)
@@ -86,7 +108,7 @@ module Segmentation
 
       {
         added_memberships: changes.sum { |c| [ c[:delta], 0 ].max },
-        removed_memberships: changes.sum { |c| [ -c[:delta], 0 ].max },
+        removed_memberships: @mode == :full ? changes.sum { |c| [ -c[:delta], 0 ].max } : 0,
         segments: changes
       }
     end

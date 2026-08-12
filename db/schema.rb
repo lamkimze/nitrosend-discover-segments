@@ -10,18 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_10_070000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_12_020000) do
   create_table "ai_analysis_runs", force: :cascade do |t|
     t.datetime "completed_at"
     t.integer "contact_count", default: 0, null: false
     t.datetime "created_at", null: false
     t.text "error_message"
+    t.string "mode", default: "full", null: false
     t.string "model", default: "demo"
     t.integer "segments_found", default: 0, null: false
     t.datetime "started_at"
     t.string "status", default: "pending", null: false
     t.json "summary", default: {}
     t.datetime "updated_at", null: false
+    t.index ["mode"], name: "index_ai_analysis_runs_on_mode"
     t.index ["status"], name: "index_ai_analysis_runs_on_status"
   end
 
@@ -41,9 +43,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_10_070000) do
     t.string "email", null: false
     t.string "first_name", null: false
     t.string "last_name", null: false
+    t.boolean "pending_allocation", default: false, null: false
     t.string "source", default: "import"
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_contacts_on_email", unique: true
+    t.index ["pending_allocation"], name: "index_contacts_on_pending_allocation"
   end
 
   create_table "events", force: :cascade do |t|
